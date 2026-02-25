@@ -27,4 +27,7 @@ export const articleApi = {
   delete: (id: number) => http.delete(`/articles/${id}`),
 
   getForEdit: (id: number) => http.get(`/articles/${id}/edit`),
+
+  myDrafts: (params: { page?: number; size?: number }) =>
+    http.get('/articles/drafts', { params }),
 }

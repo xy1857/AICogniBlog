@@ -25,6 +25,15 @@ public class ArticleController {
     private final CategoryMapper categoryMapper;
     private final TagMapper tagMapper;
 
+    @GetMapping("/api/articles/drafts")
+    public Result<PageResult<ArticleVO>> listMyDrafts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return Result.success(articleService.listMyDrafts(userId, page, size));
+    }
+
     @GetMapping("/api/articles")
     public Result<PageResult<ArticleVO>> listArticles(
             @RequestParam(defaultValue = "1") int page,

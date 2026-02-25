@@ -16,6 +16,7 @@
                 <el-dropdown-menu>
                   <el-dropdown-item @click="$router.push('/profile')">个人中心</el-dropdown-item>
                   <el-dropdown-item @click="$router.push('/articles/create')">写文章</el-dropdown-item>
+                  <el-dropdown-item @click="$router.push('/drafts')">我的草稿</el-dropdown-item>
                   <el-dropdown-item v-if="auth.isAdmin" @click="$router.push('/admin')">管理后台</el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>

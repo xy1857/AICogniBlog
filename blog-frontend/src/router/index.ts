@@ -12,6 +12,7 @@ const router = createRouter({
         { path: '', name: 'Home', component: () => import('@/views/blog/HomeView.vue') },
         { path: 'article/:id', name: 'ArticleDetail', component: () => import('@/views/blog/ArticleDetailView.vue') },
         { path: 'profile', name: 'Profile', component: () => import('@/views/blog/ProfileView.vue'), meta: { requireAuth: true } },
+        { path: 'drafts', name: 'Drafts', component: () => import('@/views/blog/DraftsView.vue'), meta: { requireAuth: true } },
         { path: 'articles/create', name: 'ArticleCreate', component: () => import('@/views/admin/ArticleEditView.vue'), meta: { requireAuth: true } },
         { path: 'articles/edit/:id', name: 'ArticleEdit', component: () => import('@/views/admin/ArticleEditView.vue'), meta: { requireAuth: true } },
       ],

@@ -126,6 +126,17 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    public PageResult<ArticleVO> listMyDrafts(Long userId, int page, int size) {
+        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<Article>()
+                .eq(Article::getAuthorId, userId)
+                .eq(Article::getStatus, 0)
+                .orderByDesc(Article::getUpdatedAt);
+        Page<Article> articlePage = articleMapper.selectPage(new Page<>(page, size), queryWrapper);
+        IPage<ArticleVO> voPage = articlePage.convert(this::toVOWithoutContent);
+        return PageResult.of(voPage);
+    }
+
+    @Override
     public Long getArticleAuthorId(Long id) {
         Article article = articleMapper.selectById(id);
         if (article == null) throw new BizException(404, "文章不存在");

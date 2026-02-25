@@ -42,6 +42,7 @@ public class SecurityConfig {
                 // 公开接口
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/articles").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/articles/drafts").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/articles/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/tags").permitAll()
