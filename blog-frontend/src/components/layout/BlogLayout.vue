@@ -6,6 +6,7 @@
         <router-link to="/" class="logo">AICogniBlog</router-link>
         <nav class="nav-links">
           <router-link to="/">首页</router-link>
+          <router-link v-if="auth.isLoggedIn" to="/articles/create">写文章</router-link>
         </nav>
         <div class="nav-actions">
           <template v-if="auth.isLoggedIn">
@@ -14,6 +15,7 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="$router.push('/profile')">个人中心</el-dropdown-item>
+                  <el-dropdown-item @click="$router.push('/articles/create')">写文章</el-dropdown-item>
                   <el-dropdown-item v-if="auth.isAdmin" @click="$router.push('/admin')">管理后台</el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>

@@ -1,5 +1,6 @@
 package com.aicogniblog.article.service.impl;
 
+import com.aicogniblog.article.dto.ArticleEditVO;
 import com.aicogniblog.article.dto.ArticleRequest;
 import com.aicogniblog.article.dto.ArticleVO;
 import com.aicogniblog.article.entity.Article;
@@ -122,6 +123,34 @@ public class ArticleServiceImpl implements ArticleService {
         Article article = articleMapper.selectById(id);
         if (article == null) throw new BizException(404, "文章不存在");
         articleMapper.deleteById(id);
+    }
+
+    @Override
+    public Long getArticleAuthorId(Long id) {
+        Article article = articleMapper.selectById(id);
+        if (article == null) throw new BizException(404, "文章不存在");
+        return article.getAuthorId();
+    }
+
+    @Override
+    public ArticleEditVO getArticleForEdit(Long id, Long userId, boolean isAdmin) {
+        Article article = articleMapper.selectById(id);
+        if (article == null) throw new BizException(404, "文章不存在");
+        if (!isAdmin && !article.getAuthorId().equals(userId)) {
+            throw new BizException(403, "无权限编辑该文章");
+        }
+        ArticleEditVO vo = new ArticleEditVO();
+        vo.setId(article.getId());
+        vo.setTitle(article.getTitle());
+        vo.setSummary(article.getSummary());
+        vo.setContentMd(article.getContentMd());
+        vo.setCoverUrl(article.getCoverUrl());
+        vo.setCategoryId(article.getCategoryId());
+        vo.setStatus(article.getStatus());
+        List<ArticleTag> ats = articleTagMapper.selectList(
+                new LambdaQueryWrapper<ArticleTag>().eq(ArticleTag::getArticleId, id));
+        vo.setTagIds(ats.stream().map(ArticleTag::getTagId).toList());
+        return vo;
     }
 
     private Article buildArticle(ArticleRequest request, Long authorId) {

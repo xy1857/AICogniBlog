@@ -41,9 +41,15 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 公开接口
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/articles").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/articles/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/tags").permitAll()
+                // 登录用户可写文章：创建、更新、删除、获取编辑数据
+                .requestMatchers(HttpMethod.POST, "/api/articles").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/articles/*").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/articles/*").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/articles/*/edit").authenticated()
                 // 管理员接口
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // 其余需要登录

@@ -86,7 +86,8 @@ async function save(status: number) {
     } else {
       await articleApi.create(payload)
       ElMessage.success(status === 1 ? '发布成功' : '草稿已保存')
-      router.push('/admin/articles')
+      const auth = (await import('@/stores/auth')).useAuthStore()
+      router.push(auth.isAdmin ? '/admin/articles' : '/')
     }
   } finally {
     saving.value = false
@@ -99,13 +100,13 @@ onMounted(async () => {
   tags.value = tagRes.data
 
   if (isEdit.value) {
-    const res = await articleApi.detail(Number(route.params.id)) as any
+    const res = await articleApi.getForEdit(Number(route.params.id)) as any
     const a = res.data
     form.title = a.title
     form.summary = a.summary || ''
     form.contentMd = a.contentMd || ''
-    form.categoryId = a.category?.id
-    form.tagIds = a.tags?.map((t: any) => t.id) || []
+    form.categoryId = a.categoryId
+    form.tagIds = a.tagIds || []
     form.status = a.status
   }
 })

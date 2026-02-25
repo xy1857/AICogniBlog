@@ -13,6 +13,10 @@
         <el-menu-item index="/admin/users">
           <el-icon><User /></el-icon>用户管理
         </el-menu-item>
+        <div class="menu-divider" />
+        <el-menu-item index="/" @click.prevent="$router.push('/')">
+          <el-icon><HomeFilled /></el-icon>回到前台
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -80,4 +84,8 @@ async function handleLogout() {
   font-size: 14px;
 }
 .admin-main { background: #f5f7fa; padding: 20px; }
+.menu-divider {
+  border-top: 1px solid #002140;
+  margin: 8px 0;
+}
 </style>

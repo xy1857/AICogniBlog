@@ -12,6 +12,8 @@ const router = createRouter({
         { path: '', name: 'Home', component: () => import('@/views/blog/HomeView.vue') },
         { path: 'article/:id', name: 'ArticleDetail', component: () => import('@/views/blog/ArticleDetailView.vue') },
         { path: 'profile', name: 'Profile', component: () => import('@/views/blog/ProfileView.vue'), meta: { requireAuth: true } },
+        { path: 'articles/create', name: 'ArticleCreate', component: () => import('@/views/admin/ArticleEditView.vue'), meta: { requireAuth: true } },
+        { path: 'articles/edit/:id', name: 'ArticleEdit', component: () => import('@/views/admin/ArticleEditView.vue'), meta: { requireAuth: true } },
       ],
     },
     // 认证
@@ -25,8 +27,8 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/admin/articles' },
         { path: 'articles', name: 'AdminArticles', component: () => import('@/views/admin/ArticleListView.vue') },
-        { path: 'articles/create', name: 'ArticleCreate', component: () => import('@/views/admin/ArticleEditView.vue') },
-        { path: 'articles/edit/:id', name: 'ArticleEdit', component: () => import('@/views/admin/ArticleEditView.vue') },
+        { path: 'articles/create', name: 'AdminArticleCreate', component: () => import('@/views/admin/ArticleEditView.vue') },
+        { path: 'articles/edit/:id', name: 'AdminArticleEdit', component: () => import('@/views/admin/ArticleEditView.vue') },
         { path: 'comments', name: 'AdminComments', component: () => import('@/views/admin/CommentManageView.vue') },
         { path: 'users', name: 'AdminUsers', component: () => import('@/views/admin/UserManageView.vue') },
       ],

@@ -20,9 +20,11 @@ export const articleApi = {
 
   tags: () => http.get('/tags'),
 
-  create: (data: ArticleRequest) => http.post('/admin/articles', data),
+  create: (data: ArticleRequest) => http.post('/articles', data),
 
-  update: (id: number, data: ArticleRequest) => http.put(`/admin/articles/${id}`, data),
+  update: (id: number, data: ArticleRequest) => http.put(`/articles/${id}`, data),
 
-  delete: (id: number) => http.delete(`/admin/articles/${id}`),
+  delete: (id: number) => http.delete(`/articles/${id}`),
+
+  getForEdit: (id: number) => http.get(`/articles/${id}/edit`),
 }
