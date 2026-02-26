@@ -23,6 +23,8 @@ public class ArticleVO {
     private CategoryInfo category;
     private List<TagInfo> tags;
     private long commentCount;
+    private long likeCount;
+    private Boolean liked;
 
     @Data
     public static class AuthorInfo {

@@ -10,6 +10,17 @@
             <span><el-icon><User /></el-icon> {{ article.author?.nickname }}</span>
             <span><el-icon><Calendar /></el-icon> {{ formatDate(article.publishedAt) }}</span>
             <span><el-icon><View /></el-icon> {{ article.viewCount }} 次阅读</span>
+            <span v-if="auth.isLoggedIn" class="like-wrap">
+              <el-button
+                :type="article.liked ? 'primary' : 'default'"
+                text
+                size="small"
+                @click="toggleLike"
+              >
+                <el-icon><Like /></el-icon>
+                {{ article.likeCount ?? 0 }} 点赞
+              </el-button>
+            </span>
             <el-tag v-if="article.category" size="small" type="info">{{ article.category.name }}</el-tag>
           </div>
           <div class="article-tags">
@@ -79,6 +90,15 @@
           <div class="author-info">
             <div class="author-avatar">{{ article.author?.nickname?.charAt(0) }}</div>
             <p class="author-name">{{ article.author?.nickname }}</p>
+            <el-button
+              v-if="auth.isLoggedIn && article.author && article.author.id !== auth.userId"
+              :type="isFollowingAuthor ? 'info' : 'primary'"
+              size="small"
+              class="follow-btn"
+              @click="toggleFollowAuthor"
+            >
+              {{ isFollowingAuthor ? '已关注' : '关注' }}
+            </el-button>
           </div>
         </el-card>
       </el-col>
@@ -94,6 +114,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { articleApi } from '@/api/article'
 import { commentApi } from '@/api/comment'
+import { followApi } from '@/api/follow'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 
@@ -105,10 +126,46 @@ const loading = ref(false)
 const commentContent = ref('')
 const submitting = ref(false)
 const replyTo = ref<{ id: number; nickname: string } | null>(null)
+const isFollowingAuthor = ref(false)
 
 function setReply(comment: any) {
   replyTo.value = { id: comment.id, nickname: comment.user?.nickname }
   commentContent.value = ''
+}
+
+async function toggleFollowAuthor() {
+  const authorId = article.value?.author?.id
+  if (!authorId) return
+  try {
+    if (isFollowingAuthor.value) {
+      await followApi.unfollow(authorId)
+      isFollowingAuthor.value = false
+      ElMessage.success('已取消关注')
+    } else {
+      await followApi.follow(authorId)
+      isFollowingAuthor.value = true
+      ElMessage.success('关注成功')
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message ?? '操作失败')
+  }
+}
+
+async function toggleLike() {
+  if (!article.value) return
+  try {
+    if (article.value.liked) {
+      await articleApi.unlike(Number(route.params.id))
+      article.value.liked = false
+      article.value.likeCount = Math.max(0, (article.value.likeCount ?? 1) - 1)
+    } else {
+      await articleApi.like(Number(route.params.id))
+      article.value.liked = true
+      article.value.likeCount = (article.value.likeCount ?? 0) + 1
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message ?? '操作失败')
+  }
 }
 
 async function submitComment() {
@@ -141,6 +198,10 @@ onMounted(async () => {
     ]) as any[]
     article.value = articleRes.data
     comments.value = commentRes.data
+    if (auth.isLoggedIn && article.value?.author?.id && article.value.author.id !== auth.userId) {
+      const checkRes = await followApi.checkFollowing(article.value.author.id) as any
+      isFollowingAuthor.value = !!checkRes.data
+    }
   } finally {
     loading.value = false
   }
@@ -305,6 +366,9 @@ onMounted(async () => {
 .author-info {
   text-align: center;
   padding: 8px 0;
+}
+.follow-btn {
+  margin-top: 8px;
 }
 
 .author-avatar {

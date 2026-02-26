@@ -1,0 +1,1139 @@
+# AICogniBlog 项目开发规范
+
+> 一个基于 Spring Boot + Vue 3 的智能博客系统，集成 AI 评论审核功能
+
+## 🌐 语言规范
+
+**所有 AI 响应、代码注释、文档说明必须使用中文（简体）**
+
+- 代码注释使用中文
+- Git 提交信息使用中文
+- 文档和说明使用中文
+- 变量和函数命名使用英文（遵循行业规范）
+
+## 📋 核心原则
+
+1. **简洁优先**: 只实现必要功能，避免过度设计
+2. **代码质量**: 确保代码可立即运行，无语法和 lint 错误
+3. **遵循约定**: 严格遵循项目现有代码风格和架构模式
+4. **安全第一**: 所有敏感操作必须经过权限验证
+5. **性能意识**: 注意数据库查询效率和异步处理
+
+---
+
+## 🏗️ 技术栈
+
+### 后端技术 (blog-backend/)
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| Spring Boot | 3.4.3 | 核心框架 |
+| Java | 17 | 开发语言 |
+| Spring Security | - | 安全认证 |
+| JWT | - | Token 认证 |
+| MyBatis-Plus | 3.5.9 | ORM 框架 |
+| MySQL | 8.0+ | 数据库 |
+| DeepSeek AI | - | 评论智能审核 |
+| Lombok | - | 简化代码 |
+| Hutool | - | 工具库 |
+
+### 前端技术 (blog-frontend/)
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| Vue | 3.x | 前端框架 |
+| TypeScript | - | 类型系统 |
+| Vite | - | 构建工具 |
+| Element Plus | - | UI 组件库 |
+| Pinia | - | 状态管理 |
+| Vue Router | - | 路由管理 |
+| ByteMD | - | Markdown 编辑器 |
+| Axios | - | HTTP 客户端 |
+
+---
+
+## 📁 项目结构
+
+### 后端模块 (`blog-backend/src/main/java/com/aicogniblog/`)
+
+```
+com.aicogniblog/
+├── auth/           # 🔐 认证模块
+│   ├── controller/ # 登录、注册接口
+│   ├── service/    # JWT 生成与验证
+│   └── dto/        # 登录请求/响应对象
+│
+├── article/        # 📝 文章模块
+│   ├── controller/ # 文章 CRUD 接口
+│   ├── service/    # 文章业务逻辑、Markdown 渲染
+│   ├── mapper/     # 文章数据访问
+│   ├── entity/     # Article 实体
+│   └── dto/        # 文章 VO 对象
+│
+├── comment/        # 💬 评论模块
+│   ├── controller/ # 评论接口
+│   ├── service/    # 嵌套评论逻辑、AI 审核状态管理
+│   ├── mapper/     # 评论数据访问
+│   └── entity/     # Comment 实体
+│
+├── ai/             # 🤖 AI 模块
+│   ├── service/    # DeepSeek API 调用、异步审核
+│   └── config/     # AI 配置、异步线程池
+│
+├── user/           # 👤 用户模块
+│   ├── controller/ # 用户信息接口
+│   ├── service/    # 个人资料、关注、订阅
+│   ├── mapper/     # 用户数据访问
+│   └── entity/     # User 实体
+│
+└── common/         # 🔧 公共模块
+    ├── config/     # 全局配置（Security、CORS、MyBatis）
+    ├── exception/  # 统一异常处理
+    ├── result/     # 统一返回结果封装
+    └── utils/      # 工具类
+```
+
+**标准模块结构**：
+- `controller/` - REST API 控制器（参数校验、调用 Service）
+- `service/` - 业务逻辑层（核心业务实现）
+- `mapper/` - 数据访问层（MyBatis-Plus）
+- `entity/` - 数据库实体（对应表结构）
+- `dto/` - 数据传输对象（VO、Request、Response）
+
+### 前端结构 (`blog-frontend/src/`)
+
+```
+src/
+├── api/            # 🌐 API 请求封装
+│   ├── http.ts     # Axios 实例配置、拦截器
+│   ├── auth.ts     # 认证相关 API
+│   ├── article.ts  # 文章相关 API
+│   └── comment.ts  # 评论相关 API
+│
+├── stores/         # 📦 Pinia 状态管理
+│   ├── auth.ts     # 认证状态（token、用户信息）
+│   └── app.ts      # 应用全局状态
+│
+├── router/         # 🛣️ 路由配置
+│   └── index.ts    # 路由定义、导航守卫
+│
+├── views/          # 📄 页面组件
+│   ├── auth/       # 登录、注册页面
+│   ├── blog/       # 博客前台（首页、文章详情、分类）
+│   └── admin/      # 管理后台（文章管理、评论审核）
+│
+├── components/     # 🧩 可复用组件
+│   ├── layout/     # 布局组件（Header、Footer、Sidebar）
+│   └── common/     # 通用组件（Loading、Empty）
+│
+├── assets/         # 🎨 静态资源
+│   ├── styles/     # 全局样式
+│   └── images/     # 图片资源
+│
+└── types/          # 📘 TypeScript 类型定义
+    └── api.d.ts    # API 响应类型
+```
+
+---
+
+## 💻 后端编码规范
+
+### 1. 分层架构原则
+
+```
+Controller → Service → Mapper → Database
+   ↓           ↓          ↓
+参数校验    业务逻辑    数据访问
+```
+
+**严格遵守**：
+- ✅ Controller 只做参数校验和调用 Service
+- ✅ Service 处理所有业务逻辑
+- ✅ Mapper 只做数据库 CRUD
+- ❌ 禁止跨层调用（如 Controller 直接调用 Mapper）
+- ❌ 禁止在 Mapper 中写业务逻辑
+
+### 2. 命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 实体类 | 大驼峰 | `Article`, `User` |
+| 数据库表 | 下划线 | `tb_article`, `tb_user` |
+| 数据库字段 | 下划线 | `created_time`, `user_id` |
+| DTO 类 | 后缀标识 | `ArticleVO`, `LoginRequest` |
+| Service 接口 | `Service` 后缀 | `ArticleService` |
+| Service 实现 | `ServiceImpl` 后缀 | `ArticleServiceImpl` |
+| Controller 方法 | 动词开头 | `getArticle()`, `createArticle()` |
+| Service 方法 | 业务语义 | `publishArticle()`, `auditComment()` |
+
+### 3. 统一返回格式
+
+**成功响应**：
+```java
+// 返回数据
+return Result.success(data);
+
+// 无数据返回
+return Result.success();
+```
+
+**失败响应**：
+```java
+// 业务失败
+return Result.error("文章不存在");
+
+// 带错误码
+return Result.error(ErrorCode.UNAUTHORIZED, "未登录");
+```
+
+**分页响应**：
+```java
+Page<Article> page = articleService.page(pageParam);
+return Result.success(PageResult.of(page));
+```
+
+### 4. 异常处理规范
+
+**业务异常**：
+```java
+// Service 层抛出业务异常
+if (article == null) {
+    throw new BizException("文章不存在");
+}
+```
+
+**全局处理**：
+- 所有异常由 `GlobalExceptionHandler` 统一捕获
+- ❌ 不要在 Controller 中使用 try-catch
+- ✅ 让异常自然向上抛出
+
+### 5. 数据库操作规范
+
+**推荐使用 Lambda 查询**：
+```java
+// ✅ 推荐：类型安全
+List<Article> articles = lambdaQuery()
+    .eq(Article::getStatus, 1)
+    .orderByDesc(Article::getCreateTime)
+    .list();
+
+// ❌ 不推荐：字符串硬编码
+List<Article> articles = list(new QueryWrapper<Article>()
+    .eq("status", 1));
+```
+
+**自动填充字段**：
+- `createTime` - 创建时自动填充
+- `updateTime` - 更新时自动填充
+- `deleted` - 逻辑删除标记（0=未删除，1=已删除）
+
+**分页查询**：
+```java
+Page<Article> page = new Page<>(pageNum, pageSize);
+Page<Article> result = articleMapper.selectPage(page, wrapper);
+```
+
+### 6. 安全规范
+
+**接口权限分类**：
+
+| 路径模式 | 权限要求 | 示例 |
+|---------|---------|------|
+| `/api/auth/**` | 公开访问 | 登录、注册 |
+| `/api/public/**` | 公开访问 | 文章列表、详情 |
+| `/api/user/**` | 需要登录 | 个人信息、发表评论 |
+| `/api/admin/**` | 需要管理员 | 文章管理、评论审核 |
+
+**JWT 认证**：
+```java
+// 需要认证的接口自动从 Header 获取 token
+// Authorization: Bearer <token>
+
+// 获取当前用户
+Long userId = SecurityUtils.getCurrentUserId();
+```
+
+**密码加密**：
+```java
+// 注册时加密
+String encodedPassword = passwordEncoder.encode(rawPassword);
+
+// 登录时验证
+passwordEncoder.matches(rawPassword, encodedPassword);
+```
+
+### 7. AI 集成规范
+
+**异步审核**：
+```java
+@Service
+public class CommentService {
+    
+    @Autowired
+    private AiService aiService;
+    
+    public void createComment(Comment comment) {
+        // 1. 先保存评论（状态=待审核）
+        comment.setStatus(0);
+        save(comment);
+        
+        // 2. 异步调用 AI 审核
+        aiService.auditCommentAsync(comment.getId());
+    }
+}
+```
+
+**审核状态**：
+- `0` - 待审核（刚提交）
+- `1` - 已通过（AI 审核通过或管理员通过）
+- `2` - 已拒绝（AI 拒绝或管理员拒绝）
+
+**审核结果存储**：
+```java
+comment.setAiAuditResult(aiResponse); // JSON 格式存储 AI 返回结果
+comment.setStatus(passed ? 1 : 2);
+```
+
+---
+
+## 🎨 前端编码规范
+
+### 1. 组件开发规范
+
+**使用 Composition API**：
+```vue
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import type { Article } from '@/types/api'
+
+// 响应式数据
+const articles = ref<Article[]>([])
+const loading = ref(false)
+
+// 计算属性
+const publishedArticles = computed(() => 
+  articles.value.filter(a => a.status === 1)
+)
+
+// 生命周期
+onMounted(() => {
+  fetchArticles()
+})
+
+// 方法
+const fetchArticles = async () => {
+  loading.value = true
+  try {
+    const res = await getArticleList()
+    articles.value = res.data
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+```
+
+**组件命名规范**：
+- 文件名：`PascalCase`（如 `ArticleDetail.vue`）
+- 组件内变量：`camelCase`（如 `articleList`）
+- 常量：`UPPER_SNAKE_CASE`（如 `MAX_PAGE_SIZE`）
+
+### 2. API 调用规范
+
+**统一封装**：
+```typescript
+// ✅ 推荐：在 api/ 目录封装
+// api/article.ts
+export const getArticleList = (params: ArticleQuery) => {
+  return http.get<PageResult<Article>>('/api/articles', { params })
+}
+
+// 组件中使用
+const { data } = await getArticleList({ page: 1, size: 10 })
+```
+
+**❌ 不推荐**：
+```typescript
+// 不要在组件中直接使用 axios
+import axios from 'axios'
+const res = await axios.get('/api/articles')
+```
+
+**错误处理**：
+- 全局错误在 `http.ts` 拦截器中统一处理
+- 特殊错误在组件中单独处理：
+```typescript
+try {
+  await deleteArticle(id)
+  ElMessage.success('删除成功')
+} catch (error) {
+  // 特殊处理
+  ElMessage.error('删除失败，请重试')
+}
+```
+
+### 3. 状态管理规范
+
+**Pinia Store 使用**：
+```typescript
+// stores/auth.ts
+import { defineStore } from 'pinia'
+
+export const useAuthStore = defineStore('auth', () => {
+  const token = ref<string>('')
+  const userInfo = ref<User | null>(null)
+  
+  const isLoggedIn = computed(() => !!token.value)
+  
+  const login = async (credentials: LoginRequest) => {
+    const res = await loginApi(credentials)
+    token.value = res.data.token
+    userInfo.value = res.data.user
+  }
+  
+  const logout = () => {
+    token.value = ''
+    userInfo.value = null
+  }
+  
+  return { token, userInfo, isLoggedIn, login, logout }
+})
+```
+
+**使用场景**：
+- ✅ 全局状态：认证信息、用户信息、主题配置
+- ✅ 跨组件共享：购物车、消息通知
+- ❌ 组件内部状态：表单数据、临时变量（用 `ref`/`reactive`）
+
+### 4. 路由配置规范
+
+**路由定义**：
+```typescript
+const routes = [
+  {
+    path: '/article/:id',
+    name: 'ArticleDetail',
+    component: () => import('@/views/blog/ArticleDetail.vue'),
+    meta: {
+      title: '文章详情',
+      requireAuth: true,  // 需要登录
+    }
+  },
+  {
+    path: '/admin',
+    component: AdminLayout,
+    meta: {
+      requireAuth: true,
+      requireAdmin: true,  // 需要管理员权限
+    },
+    children: [...]
+  }
+]
+```
+
+**路由守卫**：
+```typescript
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  
+  // 需要登录
+  if (to.meta.requireAuth && !authStore.isLoggedIn) {
+    return next('/login')
+  }
+  
+  // 需要管理员
+  if (to.meta.requireAdmin && !authStore.isAdmin) {
+    ElMessage.error('无权限访问')
+    return next('/')
+  }
+  
+  next()
+})
+```
+
+### 5. TypeScript 类型规范
+
+**定义接口类型**：
+```typescript
+// types/api.d.ts
+export interface Article {
+  id: number
+  title: string
+  content: string
+  authorId: number
+  status: 0 | 1 | 2  // 使用字面量类型
+  createTime: string
+  updateTime: string
+}
+
+export interface PageResult<T> {
+  records: T[]
+  total: number
+  current: number
+  size: number
+}
+
+export interface ApiResponse<T = any> {
+  code: number
+  message: string
+  data: T
+}
+```
+
+**组件 Props 类型**：
+```typescript
+// ✅ 推荐：使用 defineProps 泛型
+interface Props {
+  article: Article
+  editable?: boolean
+}
+
+const props = defineProps<Props>()
+
+// 默认值
+const props = withDefaults(defineProps<Props>(), {
+  editable: false
+})
+```
+
+**避免 any**：
+```typescript
+// ❌ 不推荐
+const data: any = await fetchData()
+
+// ✅ 推荐
+const data: Article[] = await fetchData()
+
+// 实在不确定用 unknown
+const data: unknown = await fetchData()
+```
+
+### 6. UI 组件使用规范
+
+**Element Plus 组件**：
+```vue
+<template>
+  <!-- 表单 -->
+  <el-form :model="form" :rules="rules" ref="formRef">
+    <el-form-item label="标题" prop="title">
+      <el-input v-model="form.title" />
+    </el-form-item>
+  </el-form>
+  
+  <!-- 表格 -->
+  <el-table :data="articles" v-loading="loading">
+    <el-table-column prop="title" label="标题" />
+    <el-table-column label="操作">
+      <template #default="{ row }">
+        <el-button @click="handleEdit(row)">编辑</el-button>
+      </template>
+    </el-table-column>
+  </el-table>
+  
+  <!-- 分页 -->
+  <el-pagination
+    v-model:current-page="page"
+    v-model:page-size="size"
+    :total="total"
+    @current-change="fetchData"
+  />
+</template>
+```
+
+**消息提示统一使用**：
+```typescript
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+// 成功提示
+ElMessage.success('操作成功')
+
+// 错误提示
+ElMessage.error('操作失败')
+
+// 确认对话框
+await ElMessageBox.confirm('确定删除吗？', '提示', {
+  type: 'warning'
+})
+```
+
+### 7. 性能优化建议
+
+**路由懒加载**：
+```typescript
+// ✅ 推荐
+component: () => import('@/views/ArticleDetail.vue')
+
+// ❌ 不推荐
+import ArticleDetail from '@/views/ArticleDetail.vue'
+component: ArticleDetail
+```
+
+**列表渲染优化**：
+```vue
+<!-- 使用 key -->
+<div v-for="article in articles" :key="article.id">
+  {{ article.title }}
+</div>
+
+<!-- 大列表使用虚拟滚动 -->
+<el-virtual-list :data="articles" :item-size="50" />
+```
+
+**避免不必要的响应式**：
+```typescript
+// 静态数据不需要 ref
+const OPTIONS = ['选项1', '选项2', '选项3']
+
+// 大对象用 shallowRef
+const bigData = shallowRef(largeObject)
+```
+
+---
+
+## 🚀 开发流程
+
+### 新增功能开发流程
+
+#### 后端开发步骤
+
+```
+1. 数据库设计 → 2. Entity → 3. Mapper → 4. Service → 5. Controller → 6. 测试
+```
+
+**示例：添加文章点赞功能**
+
+```java
+// 1. 数据库表（db/init.sql）
+CREATE TABLE tb_article_like (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    article_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_article_user (article_id, user_id)
+);
+
+// 2. Entity
+@Data
+@TableName("tb_article_like")
+public class ArticleLike {
+    private Long id;
+    private Long articleId;
+    private Long userId;
+    private LocalDateTime createTime;
+}
+
+// 3. Mapper
+public interface ArticleLikeMapper extends BaseMapper<ArticleLike> {
+}
+
+// 4. Service
+@Service
+public class ArticleLikeService extends ServiceImpl<ArticleLikeMapper, ArticleLike> {
+    
+    public void likeArticle(Long articleId, Long userId) {
+        ArticleLike like = new ArticleLike();
+        like.setArticleId(articleId);
+        like.setUserId(userId);
+        save(like);
+    }
+    
+    public void unlikeArticle(Long articleId, Long userId) {
+        lambdaUpdate()
+            .eq(ArticleLike::getArticleId, articleId)
+            .eq(ArticleLike::getUserId, userId)
+            .remove();
+    }
+    
+    public long getLikeCount(Long articleId) {
+        return lambdaQuery()
+            .eq(ArticleLike::getArticleId, articleId)
+            .count();
+    }
+}
+
+// 5. Controller
+@RestController
+@RequestMapping("/api/articles")
+public class ArticleController {
+    
+    @Autowired
+    private ArticleLikeService likeService;
+    
+    @PostMapping("/{id}/like")
+    public Result<Void> likeArticle(@PathVariable Long id) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        likeService.likeArticle(id, userId);
+        return Result.success();
+    }
+    
+    @DeleteMapping("/{id}/like")
+    public Result<Void> unlikeArticle(@PathVariable Long id) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        likeService.unlikeArticle(id, userId);
+        return Result.success();
+    }
+    
+    @GetMapping("/{id}/likes")
+    public Result<Long> getLikeCount(@PathVariable Long id) {
+        return Result.success(likeService.getLikeCount(id));
+    }
+}
+```
+
+#### 前端开发步骤
+
+```
+1. 类型定义 → 2. API 封装 → 3. 页面/组件 → 4. 路由配置 → 5. 测试
+```
+
+**示例：添加文章点赞功能**
+
+```typescript
+// 1. 类型定义（types/api.d.ts）
+export interface ArticleLike {
+  articleId: number
+  userId: number
+  createTime: string
+}
+
+// 2. API 封装（api/article.ts）
+export const likeArticle = (id: number) => {
+  return http.post(`/api/articles/${id}/like`)
+}
+
+export const unlikeArticle = (id: number) => {
+  return http.delete(`/api/articles/${id}/like`)
+}
+
+export const getLikeCount = (id: number) => {
+  return http.get<number>(`/api/articles/${id}/likes`)
+}
+
+// 3. 组件使用（views/blog/ArticleDetail.vue）
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { likeArticle, unlikeArticle, getLikeCount } from '@/api/article'
+
+const props = defineProps<{ id: number }>()
+
+const likeCount = ref(0)
+const isLiked = ref(false)
+const loading = ref(false)
+
+const handleLike = async () => {
+  loading.value = true
+  try {
+    if (isLiked.value) {
+      await unlikeArticle(props.id)
+      likeCount.value--
+      isLiked.value = false
+    } else {
+      await likeArticle(props.id)
+      likeCount.value++
+      isLiked.value = true
+    }
+    ElMessage.success(isLiked.value ? '点赞成功' : '取消点赞')
+  } catch (error) {
+    ElMessage.error('操作失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(async () => {
+  likeCount.value = await getLikeCount(props.id)
+})
+</script>
+
+<template>
+  <el-button 
+    :icon="isLiked ? 'StarFilled' : 'Star'"
+    :loading="loading"
+    @click="handleLike"
+  >
+    {{ likeCount }}
+  </el-button>
+</template>
+```
+
+### 数据库变更流程
+
+1. 修改 `db/init.sql` 文件
+2. 更新对应的 Entity 类
+3. 如果是新表，创建对应的 Mapper 接口
+4. 重启后端服务（开发环境会自动重建表）
+
+**注意**：生产环境使用数据库迁移工具（如 Flyway）
+
+### 代码审查检查清单
+
+**后端检查**：
+- [ ] 是否遵循分层架构
+- [ ] 是否有统一的异常处理
+- [ ] 是否有权限控制
+- [ ] SQL 是否有性能问题
+- [ ] 是否有事务处理（涉及多表操作）
+- [ ] 日志是否完善
+
+**前端检查**：
+- [ ] 是否有 TypeScript 类型定义
+- [ ] 是否有 loading 状态
+- [ ] 是否有错误处理
+- [ ] 是否有用户提示
+- [ ] 组件是否可复用
+- [ ] 是否有性能问题（大列表、频繁请求）
+
+---
+
+## 🐛 调试技巧
+
+### 后端调试
+
+**查看 SQL 日志**：
+```yaml
+# application.yml
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+```
+
+**查看详细日志**：
+```yaml
+logging:
+  level:
+    com.aicogniblog: debug
+    org.springframework.security: debug
+```
+
+**常见问题排查**：
+
+| 问题 | 排查方法 |
+|------|---------|
+| JWT 认证失败 | 检查 token 是否过期、请求头格式是否正确 |
+| 跨域问题 | 检查 `SecurityConfig` 中的 CORS 配置 |
+| SQL 执行错误 | 查看控制台 SQL 日志，检查字段映射 |
+| 事务不生效 | 确认方法上有 `@Transactional` 注解 |
+| 异步不生效 | 确认类上有 `@EnableAsync`，方法上有 `@Async` |
+
+### 前端调试
+
+**开发工具**：
+- Vue DevTools：查看组件状态、Pinia store
+- Network 面板：查看 API 请求和响应
+- Console：查看错误日志
+
+**常见问题排查**：
+
+| 问题 | 排查方法 |
+|------|---------|
+| API 请求 404 | 检查 Vite 代理配置、后端接口路径 |
+| 路由跳转失败 | 检查路由守卫、权限配置 |
+| 组件不更新 | 检查响应式数据是否正确使用 ref/reactive |
+| 样式不生效 | 检查 scoped 样式、CSS 优先级 |
+| TypeScript 报错 | 检查类型定义、接口返回值 |
+
+**调试技巧**：
+```typescript
+// 1. 使用 console.log 调试
+console.log('当前状态:', { articles, loading })
+
+// 2. 使用 debugger 断点
+const fetchData = async () => {
+  debugger  // 浏览器会在此处暂停
+  const res = await getArticles()
+}
+
+// 3. 监听响应式数据变化
+import { watch } from 'vue'
+watch(articles, (newVal, oldVal) => {
+  console.log('articles 变化:', newVal, oldVal)
+})
+```
+
+---
+
+## ⚙️ 配置说明
+
+### 后端配置 (application.yml)
+
+```yaml
+server:
+  port: 8089  # 服务端口
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/aicogniblog?useUnicode=true&characterEncoding=utf8
+    username: root
+    password: your_password  # 修改为实际密码
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  # JWT 配置
+app:
+  jwt:
+    secret: your-secret-key-at-least-256-bits  # 生产环境必须修改
+    expiration: 86400000  # 24小时（毫秒）
+  
+  # AI 配置
+  ai:
+    api-key: ${DEEPSEEK_API_KEY}  # 从环境变量读取
+    api-url: https://api.deepseek.com/v1/chat/completions
+    model: deepseek-chat
+```
+
+**环境变量配置**：
+```bash
+# Windows
+set DEEPSEEK_API_KEY=your_api_key
+
+# Linux/Mac
+export DEEPSEEK_API_KEY=your_api_key
+```
+
+### 前端配置
+
+**Vite 代理配置 (vite.config.ts)**：
+```typescript
+export default defineConfig({
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8089',
+        changeOrigin: true,
+      }
+    }
+  }
+})
+```
+
+**环境变量 (.env)**：
+```bash
+# 开发环境
+VITE_API_BASE_URL=http://localhost:8089
+
+# 生产环境 (.env.production)
+VITE_API_BASE_URL=https://api.yourdomain.com
+```
+
+---
+
+## 📦 依赖管理
+
+### 后端依赖 (pom.xml)
+
+**添加新依赖**：
+```xml
+<properties>
+    <new-lib.version>1.0.0</new-lib.version>
+</properties>
+
+<dependencies>
+    <dependency>
+        <groupId>com.example</groupId>
+        <artifactId>new-lib</artifactId>
+        <version>${new-lib.version}</version>
+    </dependency>
+</dependencies>
+```
+
+**更新依赖**：
+```bash
+mvn clean install
+```
+
+### 前端依赖 (package.json)
+
+**安装新依赖**：
+```bash
+# 生产依赖
+npm install package-name
+
+# 开发依赖
+npm install -D package-name
+
+# 指定版本
+npm install package-name@1.0.0
+```
+
+**更新依赖**：
+```bash
+# 查看可更新的包
+npm outdated
+
+# 更新所有包
+npm update
+
+# 更新指定包
+npm update package-name
+```
+
+---
+
+## 🚢 部署说明
+
+### 后端部署
+
+**打包**：
+```bash
+mvn clean package -DskipTests
+```
+
+**运行**：
+```bash
+# 直接运行
+java -jar target/blog-backend-1.0.0.jar
+
+# 指定配置文件
+java -jar target/blog-backend-1.0.0.jar --spring.profiles.active=prod
+
+# 后台运行
+nohup java -jar target/blog-backend-1.0.0.jar > app.log 2>&1 &
+```
+
+**Docker 部署**：
+```dockerfile
+FROM openjdk:17-slim
+WORKDIR /app
+COPY target/blog-backend-1.0.0.jar app.jar
+EXPOSE 8089
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+### 前端部署
+
+**构建**：
+```bash
+npm run build
+```
+
+**部署到 Nginx**：
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+    
+    root /var/www/blog-frontend/dist;
+    index index.html;
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    location /api {
+        proxy_pass http://localhost:8089;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+---
+
+## 🔍 常见问题
+
+### 1. JWT 认证失败
+
+**症状**：接口返回 401 Unauthorized
+
+**解决方法**：
+- 检查 token 是否过期（默认 24 小时）
+- 确认请求头格式：`Authorization: Bearer <token>`
+- 检查 JWT secret 配置是否一致
+
+### 2. 跨域问题
+
+**症状**：浏览器控制台报 CORS 错误
+
+**解决方法**：
+- 开发环境：使用 Vite 代理（已配置）
+- 生产环境：后端 `SecurityConfig` 中配置 CORS
+
+### 3. AI 审核不工作
+
+**症状**：评论一直处于待审核状态
+
+**解决方法**：
+- 检查 DeepSeek API Key 是否配置
+- 查看后端日志是否有异常
+- 确认 `@EnableAsync` 注解已添加
+- 检查异步线程池配置
+
+### 4. 数据库连接失败
+
+**症状**：启动时报数据库连接错误
+
+**解决方法**：
+- 确认 MySQL 服务已启动
+- 检查数据库名称、用户名、密码
+- 确认数据库已创建（`CREATE DATABASE aicogniblog`）
+
+### 5. 前端页面空白
+
+**症状**：访问页面显示空白
+
+**解决方法**：
+- 打开浏览器控制台查看错误
+- 检查路由配置是否正确
+- 确认 API 请求是否成功
+- 检查组件是否正确导入
+
+---
+
+## 💡 扩展建议
+
+### 性能优化
+
+- [ ] 添加 Redis 缓存热门文章
+- [ ] 使用 CDN 加速静态资源
+- [ ] 数据库索引优化
+- [ ] 图片懒加载和压缩
+- [ ] 前端代码分割和懒加载
+
+### 功能扩展
+
+- [ ] 集成 Elasticsearch 实现全文搜索
+- [ ] 添加文件上传功能（图片、附件）
+- [ ] 实现 WebSocket 实时通知
+- [ ] 添加文章草稿自动保存
+- [ ] 支持 Markdown 图片粘贴上传
+- [ ] 添加文章导出（PDF、Word）
+- [ ] 实现多语言支持（i18n）
+
+### 测试完善
+
+- [ ] 单元测试（JUnit + Mockito）
+- [ ] 集成测试（Spring Boot Test）
+- [ ] 前端单元测试（Vitest）
+- [ ] E2E 测试（Playwright）
+- [ ] API 文档（Swagger/OpenAPI）
+
+### 运维监控
+
+- [ ] 添加日志收集（ELK）
+- [ ] 性能监控（Prometheus + Grafana）
+- [ ] 错误追踪（Sentry）
+- [ ] 健康检查接口
+- [ ] 数据库备份策略
+
+---
+
+## 📚 参考资源
+
+### 官方文档
+
+- [Spring Boot 文档](https://spring.io/projects/spring-boot)
+- [MyBatis-Plus 文档](https://baomidou.com/)
+- [Vue 3 文档](https://cn.vuejs.org/)
+- [Element Plus 文档](https://element-plus.org/zh-CN/)
+- [TypeScript 文档](https://www.typescriptlang.org/zh/)
+
+### 最佳实践
+
+- [阿里巴巴 Java 开发手册](https://github.com/alibaba/p3c)
+- [Vue 3 风格指南](https://cn.vuejs.org/style-guide/)
+- [RESTful API 设计指南](https://restfulapi.net/)
+
+---
+
+**最后更新**: 2026-02-26
+

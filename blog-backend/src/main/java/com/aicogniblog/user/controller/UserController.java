@@ -2,7 +2,12 @@ package com.aicogniblog.user.controller;
 
 import com.aicogniblog.auth.entity.User;
 import com.aicogniblog.auth.mapper.UserMapper;
+import com.aicogniblog.article.dto.ArticleVO;
+import com.aicogniblog.article.service.ArticleService;
+import com.aicogniblog.comment.dto.MyCommentVO;
+import com.aicogniblog.comment.service.CommentService;
 import com.aicogniblog.common.exception.BizException;
+import com.aicogniblog.common.result.PageResult;
 import com.aicogniblog.common.result.Result;
 import com.aicogniblog.user.dto.UpdatePasswordRequest;
 import com.aicogniblog.user.dto.UpdateProfileRequest;
@@ -20,6 +25,8 @@ public class UserController {
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final CommentService commentService;
+    private final ArticleService articleService;
 
     @GetMapping("/profile")
     public Result<UserVO> getProfile(Authentication auth) {
@@ -51,5 +58,32 @@ public class UserController {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userMapper.updateById(user);
         return Result.success("密码修改成功");
+    }
+
+    @GetMapping("/comments")
+    public Result<PageResult<MyCommentVO>> listMyComments(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return Result.success(commentService.listMyComments(userId, page, size));
+    }
+
+    @GetMapping("/likes")
+    public Result<PageResult<ArticleVO>> listMyLikes(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return Result.success(articleService.listLikedArticles(userId, page, size));
+    }
+
+    @GetMapping("/footprints")
+    public Result<PageResult<ArticleVO>> listMyFootprints(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return Result.success(articleService.listFootprints(userId, page, size));
     }
 }

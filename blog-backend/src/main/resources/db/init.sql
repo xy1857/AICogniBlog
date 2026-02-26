@@ -90,12 +90,52 @@ CREATE TABLE IF NOT EXISTS `comment` (
     KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='评论表';
 
+-- 文章点赞表
+CREATE TABLE IF NOT EXISTS `article_like` (
+    `user_id`     BIGINT   NOT NULL COMMENT '用户ID',
+    `article_id`  BIGINT   NOT NULL COMMENT '文章ID',
+    `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+    PRIMARY KEY (`user_id`, `article_id`),
+    KEY `idx_article_id` (`article_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章点赞表';
+
+-- 浏览足迹表（每用户每文章一条，按最近浏览时间更新）
+CREATE TABLE IF NOT EXISTS `browse_history` (
+    `user_id`    BIGINT   NOT NULL COMMENT '用户ID',
+    `article_id` BIGINT   NOT NULL COMMENT '文章ID',
+    `viewed_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '浏览时间',
+    PRIMARY KEY (`user_id`, `article_id`),
+    KEY `idx_user_viewed` (`user_id`, `viewed_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户浏览足迹';
+
+-- 订阅表（分类/标签）
+CREATE TABLE IF NOT EXISTS `subscription` (
+    `id`         BIGINT   NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `user_id`    BIGINT   NOT NULL COMMENT '用户ID',
+    `target_type` VARCHAR(20) NOT NULL COMMENT '类型: category / tag',
+    `target_id`  BIGINT   NOT NULL COMMENT '目标ID（分类ID或标签ID）',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_target` (`user_id`, `target_type`, `target_id`),
+    KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户订阅';
+
+-- 关注表
+CREATE TABLE IF NOT EXISTS `follow` (
+    `follower_id`  BIGINT   NOT NULL COMMENT '关注者ID',
+    `following_id` BIGINT   NOT NULL COMMENT '被关注者ID',
+    `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`follower_id`, `following_id`),
+    KEY `idx_follower` (`follower_id`),
+    KEY `idx_following` (`following_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户关注';
+
 -- 初始化管理员账号（密码: Admin@123，已用BCrypt加密）
 INSERT INTO `user` (`username`, `password_hash`, `email`, `nickname`, `role`, `status`)
 VALUES ('admin', '$2b$10$9R7x/6i8ngiHftgNpg0x6u7sXGOVaYnEj87lhQ4Ng61yZ3.ffchna', 'admin@aicogniblog.com', '管理员', 1, 1);
 
 -- 初始化测试分类
-INSERT INTO `category` (`name`, `slug`) VALUES ('后端开发', 'backend'), ('前端开发', 'frontend'), ('随笔', 'essay');
+INSERT INTO `category` (`name`, `slug`) VALUES ('后端开发', 'backend'), ('前端开发', 'frontend'), ('随笔', 'essay'), ('官方公告', 'official');
 
 -- 初始化测试标签
 INSERT INTO `tag` (`name`) VALUES ('Java'), ('Spring Boot'), ('Vue'), ('MySQL'), ('学习笔记');

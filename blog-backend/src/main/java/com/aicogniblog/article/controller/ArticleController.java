@@ -39,14 +39,30 @@ public class ArticleController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) String categorySlug,
             @RequestParam(required = false) Integer tagId,
             @RequestParam(required = false) String keyword) {
-        return Result.success(articleService.listArticles(page, size, categoryId, tagId, keyword));
+        return Result.success(articleService.listArticles(page, size, categoryId, categorySlug, tagId, keyword));
     }
 
     @GetMapping("/api/articles/{id}")
-    public Result<ArticleVO> getArticle(@PathVariable Long id) {
-        return Result.success(articleService.getArticleById(id));
+    public Result<ArticleVO> getArticle(@PathVariable Long id, Authentication auth) {
+        Long userId = auth != null && auth.getPrincipal() != null ? (Long) auth.getPrincipal() : null;
+        return Result.success(articleService.getArticleById(id, userId));
+    }
+
+    @PostMapping("/api/articles/{id}/like")
+    public Result<Void> likeArticle(@PathVariable Long id, Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        articleService.likeArticle(id, userId);
+        return Result.success("已点赞");
+    }
+
+    @DeleteMapping("/api/articles/{id}/like")
+    public Result<Void> unlikeArticle(@PathVariable Long id, Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        articleService.unlikeArticle(id, userId);
+        return Result.success("已取消");
     }
 
     @GetMapping("/api/articles/{id}/edit")

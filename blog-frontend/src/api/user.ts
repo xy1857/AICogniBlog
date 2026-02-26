@@ -9,6 +9,15 @@ export const userApi = {
   updatePassword: (data: { oldPassword: string; newPassword: string }) =>
     http.put('/user/password', data),
 
+  myComments: (params: { page?: number; size?: number }) =>
+    http.get('/user/comments', { params }),
+
+  myLikes: (params: { page?: number; size?: number }) =>
+    http.get('/user/likes', { params }),
+
+  footprints: (params: { page?: number; size?: number }) =>
+    http.get('/user/footprints', { params }),
+
   adminList: (params: { page?: number; size?: number; keyword?: string }) =>
     http.get('/admin/users', { params }),
 

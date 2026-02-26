@@ -11,10 +11,14 @@ export interface ArticleRequest {
 }
 
 export const articleApi = {
-  list: (params: { page?: number; size?: number; categoryId?: number; tagId?: number; keyword?: string }) =>
+  list: (params: { page?: number; size?: number; categoryId?: number; categorySlug?: string; tagId?: number; keyword?: string }) =>
     http.get('/articles', { params }),
 
   detail: (id: number) => http.get(`/articles/${id}`),
+
+  like: (id: number) => http.post(`/articles/${id}/like`),
+
+  unlike: (id: number) => http.delete(`/articles/${id}/like`),
 
   categories: () => http.get('/categories'),
 

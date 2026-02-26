@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.aicogniblog.comment.dto.LatestCommentVO;
+
 import java.util.List;
 
 @RestController
@@ -18,6 +20,11 @@ import java.util.List;
 public class CommentController {
 
     private final CommentService commentService;
+
+    @GetMapping("/api/comments/latest")
+    public Result<List<LatestCommentVO>> listLatest(@RequestParam(defaultValue = "20") int limit) {
+        return Result.success(commentService.listLatest(Math.min(limit, 100)));
+    }
 
     @GetMapping("/api/articles/{articleId}/comments")
     public Result<List<CommentVO>> listComments(@PathVariable Long articleId) {

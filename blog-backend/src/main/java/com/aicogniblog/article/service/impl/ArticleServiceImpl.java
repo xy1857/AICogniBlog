@@ -4,10 +4,14 @@ import com.aicogniblog.article.dto.ArticleEditVO;
 import com.aicogniblog.article.dto.ArticleRequest;
 import com.aicogniblog.article.dto.ArticleVO;
 import com.aicogniblog.article.entity.Article;
+import com.aicogniblog.article.entity.ArticleLike;
 import com.aicogniblog.article.entity.ArticleTag;
+import com.aicogniblog.article.entity.BrowseHistory;
 import com.aicogniblog.article.entity.Category;
 import com.aicogniblog.article.entity.Tag;
+import com.aicogniblog.article.mapper.ArticleLikeMapper;
 import com.aicogniblog.article.mapper.ArticleMapper;
+import com.aicogniblog.article.mapper.BrowseHistoryMapper;
 import com.aicogniblog.article.mapper.ArticleTagMapper;
 import com.aicogniblog.article.mapper.CategoryMapper;
 import com.aicogniblog.article.mapper.TagMapper;
@@ -30,7 +34,12 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +47,8 @@ public class ArticleServiceImpl implements ArticleService {
 
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
+    private final ArticleLikeMapper articleLikeMapper;
+    private final BrowseHistoryMapper browseHistoryMapper;
     private final CategoryMapper categoryMapper;
     private final TagMapper tagMapper;
     private final UserMapper userMapper;
@@ -47,12 +58,19 @@ public class ArticleServiceImpl implements ArticleService {
     private static final HtmlRenderer HTML_RENDERER = HtmlRenderer.builder().build();
 
     @Override
-    public PageResult<ArticleVO> listArticles(int page, int size, Integer categoryId, Integer tagId, String keyword) {
+    public PageResult<ArticleVO> listArticles(int page, int size, Integer categoryId, String categorySlug, Integer tagId, String keyword) {
+        Integer resolvedCategoryId = categoryId;
+        if (resolvedCategoryId == null && StringUtils.hasText(categorySlug)) {
+            Category bySlug = categoryMapper.selectOne(
+                    new LambdaQueryWrapper<Category>().eq(Category::getSlug, categorySlug).last("LIMIT 1"));
+            if (bySlug != null) resolvedCategoryId = bySlug.getId();
+        }
+
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<Article>()
                 .eq(Article::getStatus, 1)
                 .orderByDesc(Article::getPublishedAt);
 
-        if (categoryId != null) queryWrapper.eq(Article::getCategoryId, categoryId);
+        if (resolvedCategoryId != null) queryWrapper.eq(Article::getCategoryId, resolvedCategoryId);
         if (StringUtils.hasText(keyword)) {
             queryWrapper.like(Article::getTitle, keyword).or().like(Article::getSummary, keyword);
         }
@@ -74,14 +92,160 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     public ArticleVO getArticleById(Long id) {
+        return getArticleById(id, null);
+    }
+
+    @Override
+    public ArticleVO getArticleById(Long id, Long userId) {
         Article article = articleMapper.selectById(id);
         if (article == null || article.getStatus() == 0) {
             throw new BizException(404, "文章不存在");
         }
-        // 浏览数+1
         article.setViewCount(article.getViewCount() + 1);
         articleMapper.updateById(article);
-        return toVO(article, true);
+        if (userId != null) {
+            recordBrowse(id, userId);
+        }
+        ArticleVO vo = toVO(article, true);
+        long likeCount = articleLikeMapper.selectCount(
+                new LambdaQueryWrapper<ArticleLike>().eq(ArticleLike::getArticleId, id));
+        vo.setLikeCount(likeCount);
+        if (userId != null) {
+            long liked = articleLikeMapper.selectCount(
+                    new LambdaQueryWrapper<ArticleLike>()
+                            .eq(ArticleLike::getArticleId, id)
+                            .eq(ArticleLike::getUserId, userId));
+            vo.setLiked(liked > 0);
+        }
+        return vo;
+    }
+
+    @Override
+    public void likeArticle(Long articleId, Long userId) {
+        Article article = articleMapper.selectById(articleId);
+        if (article == null || article.getStatus() == 0) {
+            throw new BizException(404, "文章不存在");
+        }
+        long exists = articleLikeMapper.selectCount(
+                new LambdaQueryWrapper<ArticleLike>()
+                        .eq(ArticleLike::getArticleId, articleId)
+                        .eq(ArticleLike::getUserId, userId));
+        if (exists > 0) return;
+        ArticleLike like = new ArticleLike();
+        like.setUserId(userId);
+        like.setArticleId(articleId);
+        like.setCreatedAt(LocalDateTime.now());
+        articleLikeMapper.insert(like);
+    }
+
+    @Override
+    public void unlikeArticle(Long articleId, Long userId) {
+        articleLikeMapper.delete(
+                new LambdaQueryWrapper<ArticleLike>()
+                        .eq(ArticleLike::getArticleId, articleId)
+                        .eq(ArticleLike::getUserId, userId));
+    }
+
+    @Override
+    public PageResult<ArticleVO> listLikedArticles(Long userId, int page, int size) {
+        Page<ArticleLike> likePage = new Page<>(page, size);
+        articleLikeMapper.selectPage(likePage,
+                new LambdaQueryWrapper<ArticleLike>()
+                        .eq(ArticleLike::getUserId, userId)
+                        .orderByDesc(ArticleLike::getCreatedAt));
+        List<ArticleLike> likes = likePage.getRecords();
+        List<Long> articleIds = likes.stream().map(ArticleLike::getArticleId).toList();
+        if (articleIds.isEmpty()) return PageResult.of(new Page<>());
+        List<Article> articles = articleMapper.selectBatchIds(articleIds);
+        Map<Long, Article> articleMap = articles.stream().collect(Collectors.toMap(Article::getId, Function.identity()));
+        List<ArticleVO> records = articleIds.stream()
+                .map(articleMap::get)
+                .filter(a -> a != null && a.getStatus() == 1)
+                .map(this::toVOWithoutContent)
+                .toList();
+        PageResult<ArticleVO> result = new PageResult<>();
+        result.setTotal(likePage.getTotal());
+        result.setCurrent((long) page);
+        result.setPages(likePage.getPages());
+        result.setRecords(records);
+        return result;
+    }
+
+    @Override
+    public PageResult<ArticleVO> listArticlesBySubscription(List<Integer> categoryIds, List<Integer> tagIds, int page, int size) {
+        List<Long> articleIds = new ArrayList<>();
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            List<Article> byCategory = articleMapper.selectList(
+                    new LambdaQueryWrapper<Article>()
+                            .eq(Article::getStatus, 1)
+                            .in(Article::getCategoryId, categoryIds)
+                            .select(Article::getId, Article::getPublishedAt));
+            articleIds.addAll(byCategory.stream().map(Article::getId).toList());
+        }
+        if (tagIds != null && !tagIds.isEmpty()) {
+            List<ArticleTag> byTag = articleTagMapper.selectList(
+                    new LambdaQueryWrapper<ArticleTag>().in(ArticleTag::getTagId, tagIds));
+            articleIds.addAll(byTag.stream().map(ArticleTag::getArticleId).distinct().toList());
+        }
+        articleIds = articleIds.stream().distinct().toList();
+        if (articleIds.isEmpty()) return PageResult.of(new Page<>());
+        List<Article> articles = articleMapper.selectBatchIds(articleIds);
+        articles = articles.stream().filter(a -> a.getStatus() == 1).sorted(Comparator.comparing(Article::getPublishedAt, Comparator.nullsLast(Comparator.reverseOrder()))).toList();
+        int total = articles.size();
+        int from = (page - 1) * size;
+        int to = Math.min(from + size, total);
+        List<Article> pageList = from < total ? articles.subList(from, to) : List.of();
+        List<ArticleVO> records = pageList.stream().map(this::toVOWithoutContent).toList();
+        PageResult<ArticleVO> result = new PageResult<>();
+        result.setTotal(total);
+        result.setCurrent((long) page);
+        result.setPages((total + size - 1) / size);
+        result.setRecords(records);
+        return result;
+    }
+
+    @Override
+    public void recordBrowse(Long articleId, Long userId) {
+        BrowseHistory existing = browseHistoryMapper.selectOne(
+                new LambdaQueryWrapper<BrowseHistory>()
+                        .eq(BrowseHistory::getUserId, userId)
+                        .eq(BrowseHistory::getArticleId, articleId));
+        if (existing != null) {
+            browseHistoryMapper.delete(
+                    new LambdaQueryWrapper<BrowseHistory>()
+                            .eq(BrowseHistory::getUserId, userId)
+                            .eq(BrowseHistory::getArticleId, articleId));
+        }
+        BrowseHistory bh = new BrowseHistory();
+        bh.setUserId(userId);
+        bh.setArticleId(articleId);
+        bh.setViewedAt(LocalDateTime.now());
+        browseHistoryMapper.insert(bh);
+    }
+
+    @Override
+    public PageResult<ArticleVO> listFootprints(Long userId, int page, int size) {
+        Page<BrowseHistory> historyPage = new Page<>(page, size);
+        browseHistoryMapper.selectPage(historyPage,
+                new LambdaQueryWrapper<BrowseHistory>()
+                        .eq(BrowseHistory::getUserId, userId)
+                        .orderByDesc(BrowseHistory::getViewedAt));
+        List<BrowseHistory> list = historyPage.getRecords();
+        List<Long> articleIds = list.stream().map(BrowseHistory::getArticleId).toList();
+        if (articleIds.isEmpty()) return PageResult.of(new Page<>());
+        List<Article> articles = articleMapper.selectBatchIds(articleIds);
+        Map<Long, Article> articleMap = articles.stream().collect(Collectors.toMap(Article::getId, Function.identity()));
+        List<ArticleVO> records = articleIds.stream()
+                .map(articleMap::get)
+                .filter(a -> a != null && a.getStatus() == 1)
+                .map(this::toVOWithoutContent)
+                .toList();
+        PageResult<ArticleVO> result = new PageResult<>();
+        result.setTotal(historyPage.getTotal());
+        result.setCurrent((long) page);
+        result.setPages(historyPage.getPages());
+        result.setRecords(records);
+        return result;
     }
 
     @Override
@@ -244,6 +408,11 @@ public class ArticleServiceImpl implements ArticleService {
                         .eq(com.aicogniblog.comment.entity.Comment::getArticleId, article.getId())
                         .eq(com.aicogniblog.comment.entity.Comment::getStatus, 1));
         vo.setCommentCount(commentCount);
+
+        // 点赞数
+        long likeCount = articleLikeMapper.selectCount(
+                new LambdaQueryWrapper<ArticleLike>().eq(ArticleLike::getArticleId, article.getId()));
+        vo.setLikeCount(likeCount);
 
         return vo;
     }

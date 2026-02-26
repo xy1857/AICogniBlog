@@ -1,54 +1,135 @@
 <template>
-  <el-container class="blog-layout" direction="vertical">
-    <!-- 页眉 -->
-    <el-header class="header">
-      <div class="header-bg" />
-      <div class="header-glow" />
-      <div class="header-inner">
-        <router-link to="/" class="logo">
-          <span class="logo-text">AICogniBlog</span>
-          <span class="logo-badge">AI</span>
+  <el-container class="blog-layout" direction="horizontal">
+    <!-- 左侧导航 -->
+    <el-aside class="side-nav" width="72px">
+      <nav class="side-nav-inner">
+        <router-link v-if="auth.isLoggedIn" to="/subscribe" class="side-item" title="订阅">
+          <el-icon><Collection /></el-icon>
+          <span class="side-label">订阅</span>
         </router-link>
-        <nav class="nav-links">
-          <router-link to="/" class="nav-link">首页</router-link>
-          <router-link v-if="auth.isLoggedIn" to="/articles/create" class="nav-link nav-link--highlight">
-            <el-icon><EditPen /></el-icon> 写文章
+        <router-link v-else to="/login" class="side-item side-item--muted" title="订阅（需登录）">
+          <el-icon><Collection /></el-icon>
+          <span class="side-label">订阅</span>
+        </router-link>
+        <router-link v-if="auth.isLoggedIn" to="/follow" class="side-item" title="关注">
+          <el-icon><Star /></el-icon>
+          <span class="side-label">关注</span>
+        </router-link>
+        <router-link v-else to="/login" class="side-item side-item--muted" title="关注（需登录）">
+          <el-icon><Star /></el-icon>
+          <span class="side-label">关注</span>
+        </router-link>
+        <router-link v-if="auth.isLoggedIn" to="/my-comments" class="side-item" title="我评">
+          <el-icon><ChatDotRound /></el-icon>
+          <span class="side-label">我评</span>
+        </router-link>
+        <router-link v-else to="/login" class="side-item side-item--muted" title="我评（需登录）">
+          <el-icon><ChatDotRound /></el-icon>
+          <span class="side-label">我评</span>
+        </router-link>
+        <router-link v-if="auth.isLoggedIn" to="/my-likes" class="side-item" title="我赞">
+          <el-icon><Like /></el-icon>
+          <span class="side-label">我赞</span>
+        </router-link>
+        <router-link v-else to="/login" class="side-item side-item--muted" title="我赞（需登录）">
+          <el-icon><Like /></el-icon>
+          <span class="side-label">我赞</span>
+        </router-link>
+        <router-link v-if="auth.isLoggedIn" to="/footprints" class="side-item" title="足迹">
+          <el-icon><Clock /></el-icon>
+          <span class="side-label">足迹</span>
+        </router-link>
+        <router-link v-else to="/login" class="side-item side-item--muted" title="足迹（需登录）">
+          <el-icon><Clock /></el-icon>
+          <span class="side-label">足迹</span>
+        </router-link>
+        <el-dropdown trigger="click" class="side-item-wrap">
+          <span class="side-item">
+            <el-icon><ArrowDown /></el-icon>
+            <span class="side-label">更多</span>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="$router.push('/essays')">
+                <el-icon><Document /></el-icon>
+                所有随笔
+              </el-dropdown-item>
+              <el-dropdown-item @click="$router.push('/')">
+                <el-icon><List /></el-icon>
+                所有文章
+              </el-dropdown-item>
+              <el-dropdown-item @click="$router.push('/comments/latest')">
+                <el-icon><ChatDotRound /></el-icon>
+                最新评论
+              </el-dropdown-item>
+              <el-dropdown-item @click="$router.push('/official')">
+                <el-icon><Notification /></el-icon>
+                官方博客
+              </el-dropdown-item>
+              <el-dropdown-item divided>
+                <span class="skin-label">博客皮肤</span>
+                <el-radio-group :model-value="theme.theme" size="small" class="skin-radios" @update:model-value="theme.setTheme">
+                  <el-radio-button label="light">亮色</el-radio-button>
+                  <el-radio-button label="dark">暗色</el-radio-button>
+                  <el-radio-button label="blue">蓝色</el-radio-button>
+                </el-radio-group>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </nav>
+    </el-aside>
+
+    <el-container direction="vertical" class="main-wrap">
+      <!-- 页眉 -->
+      <el-header class="header">
+        <div class="header-bg" />
+        <div class="header-glow" />
+        <div class="header-inner">
+          <router-link to="/" class="logo">
+            <span class="logo-text">AICogniBlog</span>
+            <span class="logo-badge">AI</span>
           </router-link>
-        </nav>
-        <div class="nav-actions">
-          <template v-if="auth.isLoggedIn">
-            <el-dropdown trigger="click">
-              <span class="user-name">
-                <span class="user-avatar">{{ auth.nickname?.charAt(0) }}</span>
-                {{ auth.nickname }}
-                <el-icon><ArrowDown /></el-icon>
-              </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="$router.push('/profile')">个人中心</el-dropdown-item>
-                  <el-dropdown-item @click="$router.push('/articles/create')">写文章</el-dropdown-item>
-                  <el-dropdown-item @click="$router.push('/drafts')">我的草稿</el-dropdown-item>
-                  <el-dropdown-item v-if="auth.isAdmin" @click="$router.push('/admin')">管理后台</el-dropdown-item>
-                  <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-          <template v-else>
-            <el-button text class="btn-ghost" @click="$router.push('/login')">登录</el-button>
-            <el-button type="primary" class="btn-neon" @click="$router.push('/register')">注册</el-button>
-          </template>
+          <nav class="nav-links">
+            <router-link to="/" class="nav-link">首页</router-link>
+            <router-link v-if="auth.isLoggedIn" to="/articles/create" class="nav-link nav-link--highlight">
+              <el-icon><EditPen /></el-icon> 写文章
+            </router-link>
+          </nav>
+          <div class="nav-actions">
+            <template v-if="auth.isLoggedIn">
+              <el-dropdown trigger="click">
+                <span class="user-name">
+                  <span class="user-avatar">{{ auth.nickname?.charAt(0) }}</span>
+                  {{ auth.nickname }}
+                  <el-icon><ArrowDown /></el-icon>
+                </span>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="$router.push('/profile')">个人中心</el-dropdown-item>
+                    <el-dropdown-item @click="$router.push('/articles/create')">写文章</el-dropdown-item>
+                    <el-dropdown-item @click="$router.push('/drafts')">我的草稿</el-dropdown-item>
+                    <el-dropdown-item v-if="auth.isAdmin" @click="$router.push('/admin')">管理后台</el-dropdown-item>
+                    <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+            <template v-else>
+              <el-button text class="btn-ghost" @click="$router.push('/login')">登录</el-button>
+              <el-button type="primary" class="btn-neon" @click="$router.push('/register')">注册</el-button>
+            </template>
+          </div>
         </div>
-      </div>
-    </el-header>
+      </el-header>
 
-    <!-- 主内容 -->
-    <el-main class="main-content">
-      <router-view />
-    </el-main>
+      <!-- 主内容 -->
+      <el-main class="main-content">
+        <router-view />
+      </el-main>
 
-    <!-- 页脚 -->
-    <footer class="footer">
+      <!-- 页脚 -->
+      <footer class="footer">
       <div class="footer-glow" />
       <div class="footer-bg" />
       <div class="footer-inner">
@@ -59,15 +140,18 @@
         </div>
       </div>
     </footer>
+    </el-container>
   </el-container>
 </template>
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/stores/theme'
 import { useRouter } from 'vue-router'
 import { authApi } from '@/api/auth'
 
 const auth = useAuthStore()
+const theme = useThemeStore()
 const router = useRouter()
 
 async function handleLogout() {
@@ -82,7 +166,81 @@ async function handleLogout() {
   min-height: 100vh;
   background: transparent;
   display: flex;
+}
+
+.main-wrap {
+  display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.side-nav {
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.side-nav-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 4px;
+}
+
+.side-item-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.side-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 8px;
+  min-width: 56px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.side-item:hover {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.side-item.router-link-active {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.side-item--muted {
+  opacity: 0.7;
+}
+
+.side-label {
+  white-space: nowrap;
+}
+
+.skin-label {
+  display: block;
+  padding: 4px 0 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.skin-radios {
+  margin-top: 4px;
+}
+
+.skin-radios :deep(.el-radio-button__inner) {
+  padding: 4px 10px;
 }
 
 .header {

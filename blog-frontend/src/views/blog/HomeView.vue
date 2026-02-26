@@ -96,6 +96,26 @@
             >{{ tag.name }}</el-tag>
           </div>
         </el-card>
+
+        <el-card class="side-card side-card--latest-comments">
+          <template #header>
+            <router-link to="/comments/latest" class="side-card-title link">
+              <el-icon><ChatDotRound /></el-icon> 最新评论
+            </router-link>
+          </template>
+          <div v-if="latestComments.length" class="latest-comments">
+            <div
+              v-for="c in latestComments"
+              :key="c.id"
+              class="latest-comment-item"
+              @click="$router.push(`/article/${c.article?.id}`)"
+            >
+              <span class="latest-comment-text">{{ (c.content || '').slice(0, 24) }}{{ (c.content || '').length > 24 ? '…' : '' }}</span>
+              <span class="latest-comment-meta">{{ c.user?.nickname }} · {{ c.article?.title }}</span>
+            </div>
+          </div>
+          <el-empty v-else description="暂无评论" :image-size="48" />
+        </el-card>
       </el-col>
     </el-row>
   </div>
@@ -104,10 +124,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { articleApi } from '@/api/article'
+import { commentApi } from '@/api/comment'
 
 const articles = ref<any[]>([])
 const categories = ref<any[]>([])
 const tags = ref<any[]>([])
+const latestComments = ref<any[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = 10
@@ -158,9 +180,14 @@ function formatDate(date: string) {
 
 onMounted(async () => {
   fetchArticles()
-  const [catRes, tagRes] = await Promise.all([articleApi.categories(), articleApi.tags()]) as any[]
+  const [catRes, tagRes, latestRes] = await Promise.all([
+    articleApi.categories(),
+    articleApi.tags(),
+    commentApi.latest({ limit: 8 }).catch(() => ({ data: [] })),
+  ]) as any[]
   categories.value = catRes.data
   tags.value = tagRes.data
+  latestComments.value = latestRes.data ?? []
 })
 </script>
 
@@ -338,6 +365,41 @@ onMounted(async () => {
 .cloud-tag:hover {
   transform: scale(1.05);
   box-shadow: 0 2px 12px rgba(14, 165, 233, 0.25);
+}
+
+.side-card-title.link {
+  text-decoration: none;
+  color: inherit;
+}
+.side-card-title.link:hover {
+  color: var(--primary);
+}
+.latest-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.latest-comment-item {
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-light);
+  transition: color 0.2s;
+}
+.latest-comment-item:last-child {
+  border-bottom: none;
+}
+.latest-comment-item:hover {
+  color: var(--primary);
+}
+.latest-comment-text {
+  display: block;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.latest-comment-meta {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .pagination {

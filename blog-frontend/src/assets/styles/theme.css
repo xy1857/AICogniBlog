@@ -277,3 +277,44 @@ a {
 a:hover {
   color: var(--primary-hover);
 }
+
+/* 暗色主题 */
+[data-theme="dark"] {
+  --primary: #38bdf8;
+  --primary-hover: #7dd3fc;
+  --primary-light: #0c4a6e;
+  --accent: #a78bfa;
+  --accent-light: #2e1065;
+  --bg-page: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-hover: #334155;
+  --bg-input: #1e293b;
+  --border: #334155;
+  --border-light: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --gradient-primary: linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%);
+  --gradient-bg: radial-gradient(ellipse 100% 60% at 50% -10%, rgba(56, 189, 248, 0.15), transparent 50%);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+[data-theme="dark"] body::before {
+  background: var(--bg-pattern), var(--gradient-bg), var(--bg-page);
+}
+
+/* 蓝色主题（偏冷色） */
+[data-theme="blue"] {
+  --primary: #0369a1;
+  --primary-hover: #0284c7;
+  --primary-light: #e0f2fe;
+  --accent: #0c4a6e;
+  --accent-light: #f0f9ff;
+  --bg-page: #f0f9ff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #e0f2fe;
+  --border: #bae6fd;
+  --border-light: #e0f2fe;
+  --gradient-primary: linear-gradient(135deg, #0369a1 0%, #0c4a6e 100%);
+}

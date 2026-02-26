@@ -8,6 +8,8 @@ import com.aicogniblog.auth.mapper.UserMapper;
 import com.aicogniblog.comment.dto.AdminCommentVO;
 import com.aicogniblog.comment.dto.CommentRequest;
 import com.aicogniblog.comment.dto.CommentVO;
+import com.aicogniblog.comment.dto.LatestCommentVO;
+import com.aicogniblog.comment.dto.MyCommentVO;
 import com.aicogniblog.comment.entity.Comment;
 import com.aicogniblog.comment.mapper.CommentMapper;
 import com.aicogniblog.comment.service.CommentService;
@@ -128,6 +130,70 @@ public class CommentServiceImpl implements CommentService {
     public void deleteComment(Long id) {
         getCommentOrThrow(id);
         commentMapper.deleteById(id);
+    }
+
+    @Override
+    public List<LatestCommentVO> listLatest(int limit) {
+        List<Comment> comments = commentMapper.selectList(
+                new LambdaQueryWrapper<Comment>()
+                        .eq(Comment::getStatus, 1)
+                        .orderByDesc(Comment::getCreatedAt)
+                        .last("LIMIT " + Math.min(limit, 100)));
+        if (comments.isEmpty()) return List.of();
+
+        List<Long> userIds = comments.stream().map(Comment::getUserId).distinct().toList();
+        List<Long> articleIds = comments.stream().map(Comment::getArticleId).distinct().toList();
+        Map<Long, User> userMap = userMapper.selectBatchIds(userIds).stream().collect(Collectors.toMap(User::getId, Function.identity()));
+        Map<Long, Article> articleMap = articleMapper.selectBatchIds(articleIds).stream().collect(Collectors.toMap(Article::getId, Function.identity()));
+
+        return comments.stream().map(c -> toLatestVO(c, userMap, articleMap)).toList();
+    }
+
+    @Override
+    public PageResult<MyCommentVO> listMyComments(Long userId, int page, int size) {
+        LambdaQueryWrapper<Comment> queryWrapper = new LambdaQueryWrapper<Comment>()
+                .eq(Comment::getUserId, userId)
+                .orderByDesc(Comment::getCreatedAt);
+        Page<Comment> commentPage = commentMapper.selectPage(new Page<>(page, size), queryWrapper);
+        List<Long> articleIds = commentPage.getRecords().stream().map(Comment::getArticleId).distinct().toList();
+        Map<Long, Article> articleMap = articleIds.isEmpty() ? Map.of() :
+                articleMapper.selectBatchIds(articleIds).stream().collect(Collectors.toMap(Article::getId, Function.identity()));
+        IPage<MyCommentVO> voPage = commentPage.convert(c -> toMyCommentVO(c, articleMap));
+        return PageResult.of(voPage);
+    }
+
+    private MyCommentVO toMyCommentVO(Comment comment, Map<Long, Article> articleMap) {
+        MyCommentVO vo = new MyCommentVO();
+        vo.setId(comment.getId());
+        vo.setContent(comment.getContent());
+        vo.setStatus(comment.getStatus());
+        vo.setCreatedAt(comment.getCreatedAt());
+        vo.setArticleId(comment.getArticleId());
+        Article article = articleMap.get(comment.getArticleId());
+        if (article != null) vo.setArticleTitle(article.getTitle());
+        return vo;
+    }
+
+    private LatestCommentVO toLatestVO(Comment comment, Map<Long, User> userMap, Map<Long, Article> articleMap) {
+        LatestCommentVO vo = new LatestCommentVO();
+        vo.setId(comment.getId());
+        vo.setContent(comment.getContent());
+        vo.setCreatedAt(comment.getCreatedAt());
+        User user = userMap.get(comment.getUserId());
+        if (user != null) {
+            LatestCommentVO.UserBrief ub = new LatestCommentVO.UserBrief();
+            ub.setId(user.getId());
+            ub.setNickname(user.getNickname());
+            vo.setUser(ub);
+        }
+        Article article = articleMap.get(comment.getArticleId());
+        if (article != null) {
+            LatestCommentVO.ArticleBrief ab = new LatestCommentVO.ArticleBrief();
+            ab.setId(article.getId());
+            ab.setTitle(article.getTitle());
+            vo.setArticle(ab);
+        }
+        return vo;
     }
 
     private Comment getCommentOrThrow(Long id) {
