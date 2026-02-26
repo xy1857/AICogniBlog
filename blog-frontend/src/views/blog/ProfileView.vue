@@ -132,5 +132,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.profile-page { padding: 20px 0; }
+.profile-page {
+  padding: 24px 0;
+}
+.profile-page :deep(.el-card) {
+  border-radius: 16px;
+}
 </style>

@@ -101,11 +101,14 @@ onMounted(fetchDrafts)
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 .page-header h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
 }
 .draft-list {
   display: flex;
@@ -116,8 +119,8 @@ onMounted(fetchDrafts)
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
   gap: 16px;
 }
 .draft-item:last-child {
@@ -131,7 +134,7 @@ onMounted(fetchDrafts)
   margin: 0 0 4px;
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -139,7 +142,7 @@ onMounted(fetchDrafts)
 .draft-summary {
   margin: 0 0 8px;
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -149,7 +152,7 @@ onMounted(fetchDrafts)
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #aaa;
+  color: var(--text-muted);
 }
 .draft-actions {
   display: flex;

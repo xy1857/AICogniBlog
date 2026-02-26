@@ -1,21 +1,29 @@
 <template>
-  <el-container style="height: 100vh">
+  <el-container class="admin-layout" style="height: 100vh">
     <!-- 侧边栏 -->
-    <el-aside width="220px" class="sidebar">
-      <div class="sidebar-logo">AICogniBlog 管理</div>
-      <el-menu router :default-active="$route.path" background-color="#001529" text-color="#ccc" active-text-color="#fff">
+    <el-aside width="240px" class="sidebar">
+      <div class="sidebar-glow" />
+      <div class="sidebar-logo">
+        <span class="logo-text">AICogniBlog</span>
+        <span class="logo-badge">管理</span>
+      </div>
+      <el-menu router :default-active="$route.path" class="admin-menu">
         <el-menu-item index="/admin/articles">
-          <el-icon><Document /></el-icon>文章管理
+          <el-icon><Document /></el-icon>
+          <span>文章管理</span>
         </el-menu-item>
         <el-menu-item index="/admin/comments">
-          <el-icon><ChatDotRound /></el-icon>评论管理
+          <el-icon><ChatDotRound /></el-icon>
+          <span>评论管理</span>
         </el-menu-item>
         <el-menu-item index="/admin/users">
-          <el-icon><User /></el-icon>用户管理
+          <el-icon><User /></el-icon>
+          <span>用户管理</span>
         </el-menu-item>
         <div class="menu-divider" />
         <el-menu-item index="/" @click.prevent="$router.push('/')">
-          <el-icon><HomeFilled /></el-icon>回到前台
+          <el-icon><HomeFilled /></el-icon>
+          <span>回到前台</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -25,7 +33,11 @@
       <el-header class="admin-header">
         <span style="flex:1"></span>
         <el-dropdown trigger="click">
-          <span class="user-name">{{ auth.nickname }} <el-icon><ArrowDown /></el-icon></span>
+          <span class="user-name">
+            <span class="user-avatar">{{ auth.nickname?.charAt(0) }}</span>
+            {{ auth.nickname }}
+            <el-icon><ArrowDown /></el-icon>
+          </span>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item @click="$router.push('/')">回到前台</el-dropdown-item>
@@ -59,33 +71,118 @@ async function handleLogout() {
 </script>
 
 <style scoped>
-.sidebar { background: #001529; }
-.sidebar-logo {
-  height: 60px;
-  line-height: 60px;
-  text-align: center;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  border-bottom: 1px solid #002140;
+.admin-layout {
+  background: var(--bg-page);
 }
+
+.sidebar {
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--gradient-primary);
+  opacity: 0.5;
+}
+
+.sidebar-logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo-text {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: var(--gradient-primary);
+  color: #fff;
+  border-radius: 6px;
+  -webkit-text-fill-color: #fff;
+}
+
+.admin-menu {
+  padding: 16px 12px;
+  border: none !important;
+  background: transparent !important;
+}
+
+.admin-menu .el-menu-item {
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.admin-menu .el-menu-item span {
+  margin-left: 10px;
+}
+
+.menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 12px;
+}
+
 .admin-header {
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   padding: 0 24px;
+  box-shadow: var(--shadow-sm);
 }
+
 .user-name {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
   font-size: 14px;
+  color: var(--text-primary);
+  padding: 8px 16px;
+  border-radius: 10px;
+  transition: all 0.2s;
 }
-.admin-main { background: #f5f7fa; padding: 20px; }
-.menu-divider {
-  border-top: 1px solid #002140;
-  margin: 8px 0;
+
+.user-name:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.admin-main {
+  background: var(--bg-page);
+  padding: 24px;
+  overflow-y: auto;
 }
 </style>

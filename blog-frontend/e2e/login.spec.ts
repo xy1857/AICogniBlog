@@ -18,4 +18,12 @@ test.describe('登录页', () => {
     await page.waitForLoadState('domcontentloaded')
     await expect(page.locator('a[href="/register"]').or(page.getByText('立即注册'))).toBeVisible({ timeout: 10000 })
   })
+
+  test('使用正确账号密码应登录成功并跳转', async ({ page }) => {
+    await page.waitForLoadState('domcontentloaded')
+    await page.getByPlaceholder('请输入用户名').fill('xieyan')
+    await page.getByPlaceholder('请输入密码').fill('xieyan21')
+    await page.getByRole('button', { name: '登 录' }).click()
+    await expect(page).toHaveURL(/\/(admin)?$/, { timeout: 10000 })
+  })
 })

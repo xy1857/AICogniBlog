@@ -4,15 +4,16 @@
       <el-col :span="17">
         <!-- 文章头部 -->
         <div class="article-header">
-          <h1>{{ article.title }}</h1>
+          <div class="article-header-glow" />
+          <h1 class="article-title">{{ article.title }}</h1>
           <div class="article-meta">
-            <span>作者：{{ article.author?.nickname }}</span>
-            <span>发布于 {{ formatDate(article.publishedAt) }}</span>
+            <span><el-icon><User /></el-icon> {{ article.author?.nickname }}</span>
+            <span><el-icon><Calendar /></el-icon> {{ formatDate(article.publishedAt) }}</span>
             <span><el-icon><View /></el-icon> {{ article.viewCount }} 次阅读</span>
-            <el-tag v-if="article.category" size="small">{{ article.category.name }}</el-tag>
+            <el-tag v-if="article.category" size="small" type="info">{{ article.category.name }}</el-tag>
           </div>
           <div class="article-tags">
-            <el-tag v-for="tag in article.tags" :key="tag.id" size="small" style="margin-right:6px">{{ tag.name }}</el-tag>
+            <el-tag v-for="tag in article.tags" :key="tag.id" size="small" class="tag-item">{{ tag.name }}</el-tag>
           </div>
         </div>
 
@@ -23,7 +24,9 @@
 
         <!-- 评论区 -->
         <el-card class="comment-section">
-          <template #header><b>评论（{{ comments.length }}）</b></template>
+          <template #header>
+            <span class="comment-header"><el-icon><ChatDotRound /></el-icon> 评论（{{ comments.length }}）</span>
+          </template>
 
           <!-- 发表评论 -->
           <div v-if="auth.isLoggedIn" class="comment-form">
@@ -35,30 +38,30 @@
               maxlength="1000"
               show-word-limit
             />
-            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+            <div class="comment-actions">
               <el-button v-if="replyTo" size="small" @click="replyTo = null">取消回复</el-button>
               <el-button type="primary" :loading="submitting" @click="submitComment">发表评论</el-button>
             </div>
           </div>
           <el-alert v-else type="info" :closable="false" show-icon>
-            <router-link to="/login">登录</router-link> 后才能发表评论
+            <router-link to="/login" class="alert-link">登录</router-link> 后才能发表评论
           </el-alert>
 
           <!-- 评论列表 -->
           <div class="comment-list">
             <div v-for="comment in comments" :key="comment.id" class="comment-item">
               <div class="comment-user">
-                <el-avatar size="small">{{ comment.user?.nickname?.charAt(0) }}</el-avatar>
+                <el-avatar size="small" class="comment-avatar">{{ comment.user?.nickname?.charAt(0) }}</el-avatar>
                 <span class="comment-nickname">{{ comment.user?.nickname }}</span>
                 <span class="comment-time">{{ formatDate(comment.createdAt) }}</span>
-                <el-button text size="small" @click="setReply(comment)">回复</el-button>
+                <el-button text size="small" class="reply-btn" @click="setReply(comment)">回复</el-button>
               </div>
               <div class="comment-content">{{ comment.content }}</div>
 
               <!-- 子评论 -->
               <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
                 <div class="comment-user">
-                  <el-avatar size="small">{{ reply.user?.nickname?.charAt(0) }}</el-avatar>
+                  <el-avatar size="small" class="comment-avatar">{{ reply.user?.nickname?.charAt(0) }}</el-avatar>
                   <span class="comment-nickname">{{ reply.user?.nickname }}</span>
                   <span class="comment-time">{{ formatDate(reply.createdAt) }}</span>
                 </div>
@@ -71,17 +74,17 @@
 
       <!-- 侧边信息 -->
       <el-col :span="7">
-        <el-card>
+        <el-card class="author-card">
           <template #header><b>作者信息</b></template>
           <div class="author-info">
-            <el-avatar :size="60">{{ article.author?.nickname?.charAt(0) }}</el-avatar>
-            <p>{{ article.author?.nickname }}</p>
+            <div class="author-avatar">{{ article.author?.nickname?.charAt(0) }}</div>
+            <p class="author-name">{{ article.author?.nickname }}</p>
           </div>
         </el-card>
       </el-col>
     </el-row>
   </div>
-  <div v-else-if="loading" style="padding:40px">
+  <div v-else-if="loading" class="loading-wrap">
     <el-skeleton :rows="8" animated />
   </div>
 </template>
@@ -145,18 +148,188 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.article-header { margin-bottom: 20px; }
-.article-header h1 { font-size: 28px; margin-bottom: 12px; }
-.article-meta { display: flex; gap: 16px; color: #999; font-size: 13px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
-.article-content { margin-bottom: 20px; }
-.markdown-body { line-height: 1.8; }
-.comment-section { margin-top: 20px; }
-.comment-form { margin-bottom: 20px; }
-.comment-item { padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
-.comment-user { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.comment-nickname { font-weight: 500; font-size: 14px; }
-.comment-time { color: #999; font-size: 12px; }
-.comment-content { font-size: 14px; color: #333; padding-left: 32px; }
-.reply-item { margin-left: 32px; padding: 8px 0; border-top: 1px solid #fafafa; }
-.author-info { text-align: center; }
+.article-detail {
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.article-header {
+  position: relative;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.article-header-glow {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 120px;
+  height: 2px;
+  background: var(--gradient-primary);
+  border-radius: 2px;
+}
+
+.article-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.article-meta {
+  display: flex;
+  gap: 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.article-meta span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-item {
+  margin-right: 8px !important;
+  margin-bottom: 4px !important;
+}
+
+.article-content {
+  margin-bottom: 28px;
+  border-radius: 16px;
+}
+
+.markdown-body {
+  line-height: 1.9;
+  font-size: 16px;
+}
+
+.comment-section {
+  border-radius: 16px;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comment-form {
+  margin-bottom: 24px;
+}
+
+.comment-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.alert-link {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.alert-link:hover {
+  text-decoration: underline;
+}
+
+.comment-list {
+  margin-top: 8px;
+}
+
+.comment-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+}
+
+.comment-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.comment-avatar {
+  background: var(--gradient-primary) !important;
+}
+
+.comment-nickname {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.comment-time {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.reply-btn {
+  color: var(--primary) !important;
+}
+
+.comment-content {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding-left: 40px;
+  line-height: 1.6;
+}
+
+.reply-item {
+  margin-left: 40px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.author-card {
+  border-radius: 16px;
+}
+
+.author-info {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.author-avatar {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.25);
+}
+
+.author-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.loading-wrap {
+  padding: 40px;
+}
 </style>

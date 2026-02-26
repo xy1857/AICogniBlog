@@ -5,9 +5,19 @@
       <el-col :span="17">
         <!-- 搜索栏 -->
         <div class="search-bar">
-          <el-input v-model="keyword" placeholder="搜索文章..." clearable @keyup.enter="search" style="width:280px">
+          <el-input
+            v-model="keyword"
+            placeholder="搜索文章..."
+            clearable
+            @keyup.enter="search"
+            class="search-input"
+            size="large"
+          >
+            <template #prefix>
+              <el-icon class="search-icon"><Search /></el-icon>
+            </template>
             <template #suffix>
-              <el-icon style="cursor:pointer" @click="search"><Search /></el-icon>
+              <el-icon class="search-btn" @click="search"><Search /></el-icon>
             </template>
           </el-input>
         </div>
@@ -18,7 +28,13 @@
 
         <template v-else>
           <el-empty v-if="!articles.length" description="暂无文章" />
-          <div v-for="article in articles" :key="article.id" class="article-card" @click="$router.push(`/article/${article.id}`)">
+          <div
+            v-for="article in articles"
+            :key="article.id"
+            class="article-card"
+            @click="$router.push(`/article/${article.id}`)"
+          >
+            <div class="article-card-glow" />
             <div class="article-meta">
               <el-tag v-if="article.category" size="small" type="info">{{ article.category.name }}</el-tag>
               <span class="meta-item"><el-icon><View /></el-icon> {{ article.viewCount }}</span>
@@ -28,9 +44,10 @@
             <h3 class="article-title">{{ article.title }}</h3>
             <p class="article-summary">{{ article.summary || '暂无摘要' }}</p>
             <div class="article-tags">
-              <el-tag v-for="tag in article.tags" :key="tag.id" size="small" style="margin-right:6px">{{ tag.name }}</el-tag>
+              <el-tag v-for="tag in article.tags" :key="tag.id" size="small" class="tag-item">{{ tag.name }}</el-tag>
             </div>
             <div class="article-author">
+              <span class="author-avatar">{{ article.author?.nickname?.charAt(0) }}</span>
               <span>作者：{{ article.author?.nickname }}</span>
             </div>
           </div>
@@ -43,31 +60,41 @@
             :page-size="pageSize"
             v-model:current-page="currentPage"
             @current-change="fetchArticles"
-            style="margin-top:20px;justify-content:center;display:flex"
+            class="pagination"
           />
         </template>
       </el-col>
 
       <!-- 侧边栏 -->
       <el-col :span="7">
-        <el-card class="side-card">
-          <template #header><b>文章分类</b></template>
-          <el-tag
-            v-for="cat in categories" :key="cat.id"
-            :type="selectedCategory === cat.id ? 'primary' : 'info'"
-            style="margin:4px;cursor:pointer"
-            @click="filterByCategory(cat.id)"
-          >{{ cat.name }}（{{ cat.article_count }}）</el-tag>
-          <el-tag type="warning" style="margin:4px;cursor:pointer" v-if="selectedCategory" @click="filterByCategory(null)">清除筛选</el-tag>
+        <el-card class="side-card side-card--categories">
+          <template #header>
+            <span class="side-card-title"><el-icon><Document /></el-icon> 文章分类</span>
+          </template>
+          <div class="tag-cloud">
+            <el-tag
+              v-for="cat in categories"
+              :key="cat.id"
+              :type="selectedCategory === cat.id ? 'primary' : 'info'"
+              class="cloud-tag"
+              @click="filterByCategory(cat.id)"
+            >{{ cat.name }}（{{ cat.article_count }}）</el-tag>
+            <el-tag type="warning" class="cloud-tag" v-if="selectedCategory" @click="filterByCategory(null)">清除筛选</el-tag>
+          </div>
         </el-card>
 
-        <el-card class="side-card" style="margin-top:16px">
-          <template #header><b>标签云</b></template>
-          <el-tag
-            v-for="tag in tags" :key="tag.id"
-            style="margin:4px;cursor:pointer"
-            @click="filterByTag(tag.id)"
-          >{{ tag.name }}</el-tag>
+        <el-card class="side-card side-card--tags">
+          <template #header>
+            <span class="side-card-title"><el-icon><PriceTag /></el-icon> 标签云</span>
+          </template>
+          <div class="tag-cloud">
+            <el-tag
+              v-for="tag in tags"
+              :key="tag.id"
+              class="cloud-tag"
+              @click="filterByTag(tag.id)"
+            >{{ tag.name }}</el-tag>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -138,24 +165,188 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.search-bar { margin-bottom: 16px; }
-.article-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 16px;
-  cursor: pointer;
-  border: 1px solid #f0f0f0;
-  transition: box-shadow .2s;
+.home {
+  animation: fadeIn 0.4s ease;
 }
-.article-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
-.article-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 13px; color: #999; }
-.meta-item { display: flex; align-items: center; gap: 3px; }
-.meta-date { margin-left: auto; }
-.article-title { font-size: 18px; font-weight: 600; margin: 0 0 8px; color: #222; }
-.article-summary { color: #666; font-size: 14px; line-height: 1.7; margin-bottom: 10px; }
-.article-tags { margin-bottom: 8px; }
-.article-author { font-size: 13px; color: #999; }
-.side-card { border-radius: 8px; }
-.loading-wrap { padding: 20px; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.search-bar {
+  margin-bottom: 24px;
+}
+
+.search-input {
+  max-width: 360px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  border-radius: 12px;
+  padding: 12px 20px;
+}
+
+.search-icon {
+  color: var(--text-muted);
+  margin-right: 8px;
+}
+
+.search-btn {
+  cursor: pointer;
+  color: var(--primary);
+  transition: all 0.2s;
+}
+
+.search-btn:hover {
+  transform: scale(1.1);
+  color: var(--primary-hover);
+}
+
+.article-card {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.article-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-hover);
+}
+
+.article-card-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.article-card:hover .article-card-glow {
+  opacity: 1;
+}
+
+.article-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-date {
+  margin-left: auto;
+  color: var(--text-muted);
+}
+
+.article-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+
+.article-card:hover .article-title {
+  color: var(--primary);
+}
+
+.article-summary {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.article-tags {
+  margin-bottom: 12px;
+}
+
+.tag-item {
+  margin-right: 8px !important;
+  margin-bottom: 4px !important;
+}
+
+.article-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.author-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.side-card {
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+
+.side-card:last-child {
+  margin-bottom: 0;
+}
+
+.side-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cloud-tag {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cloud-tag:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 12px rgba(14, 165, 233, 0.25);
+}
+
+.pagination {
+  margin-top: 32px;
+  justify-content: center;
+  display: flex;
+}
+
+.loading-wrap {
+  padding: 24px;
+}
 </style>

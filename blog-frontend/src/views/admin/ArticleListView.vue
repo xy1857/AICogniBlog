@@ -89,8 +89,25 @@ onMounted(fetchArticles)
 </script>
 
 <style scoped>
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.page-header h2 { margin: 0; }
-.article-link { color: #409eff; text-decoration: none; }
-.article-link:hover { text-decoration: underline; }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.page-header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.article-link {
+  color: var(--primary);
+  text-decoration: none;
+}
+.article-link:hover {
+  text-decoration: underline;
+  color: var(--primary-hover);
+}
 </style>
