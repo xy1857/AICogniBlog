@@ -18,6 +18,11 @@
 3. **遵循约定**: 严格遵循项目现有代码风格和架构模式
 4. **安全第一**: 所有敏感操作必须经过权限验证
 5. **性能意识**: 注意数据库查询效率和异步处理
+6. **注释规范**: 
+   - 所有类必须添加类级别 Javadoc 注释（包含功能说明、@author、@since）
+   - 所有 public 方法必须添加完整的方法注释（包含功能说明、@param、@return、@throws）
+   - 所有实体类字段必须添加字段注释（说明字段含义，枚举值需列出每个值的含义）
+   - 所有注释必须使用中文
 
 ---
 
@@ -138,7 +143,408 @@ src/
 
 ## 💻 后端编码规范
 
-### 1. 分层架构原则
+### 1. 代码注释规范
+
+#### 1.1 类注释规范
+
+**所有类（包括 Controller、Service、Entity、DTO 等）必须添加类级别的 Javadoc 注释**
+
+**格式要求**：
+```java
+/**
+ * 类功能简述（一句话说明类的作用）
+ * 
+ * <p>详细说明（可选，复杂类需要补充说明）
+ * 
+ * @author 作者名
+ * @since 版本号
+ */
+public class ClassName {
+}
+```
+
+**示例**：
+
+```java
+/**
+ * 文章管理控制器
+ * 
+ * <p>提供文章的增删改查、点赞、浏览记录等功能接口
+ * 
+ * @author AICogniBlog Team
+ * @since 1.0.0
+ */
+@RestController
+@RequiredArgsConstructor
+public class ArticleController {
+}
+
+/**
+ * 文章实体类
+ * 
+ * <p>对应数据库表 article，存储文章的基本信息和内容
+ * 
+ * @author AICogniBlog Team
+ * @since 1.0.0
+ */
+@Data
+@TableName("article")
+public class Article {
+}
+
+/**
+ * 文章业务逻辑接口
+ * 
+ * <p>定义文章相关的核心业务方法，包括文章发布、编辑、查询、点赞等功能
+ * 
+ * @author AICogniBlog Team
+ * @since 1.0.0
+ */
+public interface ArticleService {
+}
+
+/**
+ * 文章业务逻辑实现类
+ * 
+ * <p>实现文章的完整业务逻辑，包括 Markdown 渲染、权限校验、数据统计等
+ * 
+ * @author AICogniBlog Team
+ * @since 1.0.0
+ */
+@Service
+@RequiredArgsConstructor
+public class ArticleServiceImpl implements ArticleService {
+}
+```
+
+#### 1.2 方法注释规范
+
+**所有 public 方法必须添加 Javadoc 注释**
+
+**格式要求**：
+```java
+/**
+ * 方法功能简述（一句话说明方法作用）
+ * 
+ * <p>详细说明（可选，复杂逻辑需要补充）
+ * 
+ * @param paramName 参数说明
+ * @return 返回值说明
+ * @throws ExceptionType 异常说明（如果有）
+ */
+public ReturnType methodName(ParamType paramName) {
+}
+```
+
+**Controller 方法示例**：
+```java
+/**
+ * 获取文章列表（分页）
+ * 
+ * <p>支持按分类、标签、关键词筛选，返回已发布的文章
+ * 
+ * @param page 页码，从 1 开始
+ * @param size 每页数量
+ * @param categoryId 分类 ID（可选）
+ * @param categorySlug 分类别名（可选）
+ * @param tagId 标签 ID（可选）
+ * @param keyword 搜索关键词（可选）
+ * @return 文章列表分页结果
+ */
+@GetMapping("/api/articles")
+public Result<PageResult<ArticleVO>> listArticles(
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(required = false) Integer categoryId,
+        @RequestParam(required = false) String categorySlug,
+        @RequestParam(required = false) Integer tagId,
+        @RequestParam(required = false) String keyword) {
+    return Result.success(articleService.listArticles(page, size, categoryId, categorySlug, tagId, keyword));
+}
+
+/**
+ * 点赞文章
+ * 
+ * @param id 文章 ID
+ * @param auth 当前登录用户认证信息
+ * @return 操作结果
+ */
+@PostMapping("/api/articles/{id}/like")
+public Result<Void> likeArticle(@PathVariable Long id, Authentication auth) {
+    Long userId = (Long) auth.getPrincipal();
+    articleService.likeArticle(id, userId);
+    return Result.success("已点赞");
+}
+```
+
+**Service 方法示例**：
+```java
+/**
+ * 创建文章
+ * 
+ * <p>将 Markdown 内容渲染为 HTML，保存文章基本信息和标签关联
+ * 
+ * @param request 文章创建请求对象
+ * @param authorId 作者用户 ID
+ * @return 新创建的文章 ID
+ * @throws BizException 如果分类不存在或标签不存在
+ */
+Long createArticle(ArticleRequest request, Long authorId);
+
+/**
+ * 异步审核评论内容
+ * 
+ * <p>调用 DeepSeek AI 接口判断评论是否违规，自动更新审核状态
+ * 
+ * @param commentId 评论 ID
+ */
+@Async
+void auditCommentAsync(Long commentId);
+```
+
+**private 方法注释**（可选，但复杂逻辑建议添加）：
+```java
+/**
+ * 构建文章查询条件
+ */
+private LambdaQueryWrapper<Article> buildQueryWrapper(Integer categoryId, String keyword) {
+    // 实现代码
+}
+```
+
+#### 1.3 字段注释规范
+
+**实体类字段必须添加注释**
+
+**格式要求**：
+- 简单字段：使用单行注释 `/** 字段说明 */`
+- 枚举值字段：使用多行注释说明每个值的含义
+- 复杂字段：添加详细说明和示例
+
+**实体类字段注释示例**：
+```java
+@Data
+@TableName("article")
+public class Article {
+
+    /** 文章 ID（主键，自增） */
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    /** 作者用户 ID */
+    private Long authorId;
+
+    /** 分类 ID */
+    private Integer categoryId;
+
+    /** 文章标题 */
+    private String title;
+
+    /** 文章摘要 */
+    private String summary;
+
+    /** Markdown 格式的文章内容 */
+    private String contentMd;
+
+    /** HTML 格式的文章内容（由 Markdown 渲染生成） */
+    private String contentHtml;
+
+    /** 封面图片 URL */
+    private String coverUrl;
+
+    /**
+     * 文章状态
+     * <ul>
+     *   <li>0 - 草稿（未发布）</li>
+     *   <li>1 - 已发布</li>
+     * </ul>
+     */
+    private Integer status;
+
+    /** 浏览次数 */
+    private Integer viewCount;
+
+    /**
+     * 逻辑删除标记
+     * <ul>
+     *   <li>0 - 未删除</li>
+     *   <li>1 - 已删除</li>
+     * </ul>
+     */
+    @TableLogic
+    private Integer deleted;
+
+    /** 发布时间 */
+    private LocalDateTime publishedAt;
+
+    /** 创建时间（自动填充） */
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createdAt;
+
+    /** 更新时间（自动填充） */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updatedAt;
+}
+```
+
+**DTO 字段注释示例**：
+```java
+@Data
+public class ArticleRequest {
+
+    /** 文章标题（必填，最大 200 字符） */
+    @NotBlank(message = "标题不能为空")
+    @Size(max = 200, message = "标题长度不能超过 200")
+    private String title;
+
+    /** 文章摘要（可选，最大 500 字符） */
+    @Size(max = 500, message = "摘要长度不能超过 500")
+    private String summary;
+
+    /** Markdown 格式的文章内容（必填） */
+    @NotBlank(message = "内容不能为空")
+    private String contentMd;
+
+    /** 封面图片 URL（可选） */
+    private String coverUrl;
+
+    /** 分类 ID（必填） */
+    @NotNull(message = "分类不能为空")
+    private Integer categoryId;
+
+    /** 标签 ID 列表（可选） */
+    private List<Integer> tagIds;
+
+    /**
+     * 文章状态（必填）
+     * <ul>
+     *   <li>0 - 保存为草稿</li>
+     *   <li>1 - 立即发布</li>
+     * </ul>
+     */
+    @NotNull(message = "状态不能为空")
+    private Integer status;
+}
+```
+
+**配置类字段注释示例**：
+```java
+@Data
+@Component
+@ConfigurationProperties(prefix = "app.ai")
+public class AiProperties {
+
+    /** DeepSeek API 密钥 */
+    private String apiKey;
+
+    /** DeepSeek API 接口地址 */
+    private String apiUrl;
+
+    /** 使用的模型名称（默认：deepseek-chat） */
+    private String model = "deepseek-chat";
+
+    /** API 请求超时时间（秒，默认：30） */
+    private Integer timeout = 30;
+
+    /** 最大重试次数（默认：3） */
+    private Integer maxRetries = 3;
+}
+```
+
+#### 1.4 注释编写原则
+
+**必须添加注释的场景**：
+- ✅ 所有 public 类
+- ✅ 所有 public 方法
+- ✅ 所有实体类字段
+- ✅ 所有 DTO 类字段
+- ✅ 所有配置类字段
+- ✅ 复杂的业务逻辑代码块
+- ✅ 枚举类型的每个值
+
+**可选添加注释的场景**：
+- private 方法（简单逻辑可省略）
+- 局部变量（变量名已经很清晰时可省略）
+- 简单的 getter/setter（Lombok 自动生成的可省略）
+
+**注释质量要求**：
+- ❌ 不要写无意义的注释：`// 获取用户` → `public User getUser()`（方法名已经说明）
+- ✅ 写有价值的注释：说明业务含义、特殊逻辑、注意事项
+- ❌ 不要注释显而易见的代码：`i++; // i 加 1`
+- ✅ 注释复杂算法和业务规则：`// 根据用户订阅的分类和标签，计算推荐权重`
+- ❌ 不要用注释解释糟糕的代码，应该重构代码
+- ✅ 用注释说明为什么这样做，而不是做了什么
+
+**注释示例对比**：
+
+```java
+// ❌ 不好的注释
+/**
+ * 获取文章
+ */
+public Article getArticle(Long id) {
+    return articleMapper.selectById(id);
+}
+
+// ✅ 好的注释
+/**
+ * 根据 ID 获取文章详情
+ * 
+ * <p>同时增加浏览计数，如果文章不存在或已删除则抛出异常
+ * 
+ * @param id 文章 ID
+ * @return 文章详情
+ * @throws BizException 如果文章不存在
+ */
+public Article getArticle(Long id) {
+    Article article = articleMapper.selectById(id);
+    if (article == null) {
+        throw new BizException("文章不存在");
+    }
+    // 异步增加浏览计数
+    incrementViewCount(id);
+    return article;
+}
+```
+
+#### 1.5 特殊注释标记
+
+**使用标准注释标记标识代码状态**：
+
+```java
+// TODO: 待实现的功能
+// TODO: 添加缓存优化查询性能
+
+// FIXME: 需要修复的问题
+// FIXME: 并发情况下可能出现重复点赞
+
+// NOTE: 重要说明
+// NOTE: 此处不能使用事务，会导致死锁
+
+// HACK: 临时解决方案
+// HACK: 临时方案，等待第三方 API 修复后移除
+
+// OPTIMIZE: 性能优化点
+// OPTIMIZE: 可以使用批量查询减少数据库访问
+```
+
+#### 1.6 注释维护规范
+
+**注释与代码同步更新**：
+- 修改代码时，必须同步更新相关注释
+- 删除代码时，必须删除对应注释
+- 不要保留过时的注释（会误导其他开发者）
+
+**注释审查检查清单**：
+- [ ] 所有 public 类是否有类注释
+- [ ] 所有 public 方法是否有方法注释
+- [ ] 实体类字段是否有注释
+- [ ] 枚举值是否说明了每个值的含义
+- [ ] 复杂业务逻辑是否有说明注释
+- [ ] 注释内容是否准确（与代码实际功能一致）
+- [ ] 注释是否使用中文（符合项目规范）
+
+### 2. 分层架构原则
 
 ```
 Controller → Service → Mapper → Database
@@ -153,7 +559,7 @@ Controller → Service → Mapper → Database
 - ❌ 禁止跨层调用（如 Controller 直接调用 Mapper）
 - ❌ 禁止在 Mapper 中写业务逻辑
 
-### 2. 命名规范
+### 3. 命名规范
 
 | 类型 | 规范 | 示例 |
 |------|------|------|
@@ -166,7 +572,7 @@ Controller → Service → Mapper → Database
 | Controller 方法 | 动词开头 | `getArticle()`, `createArticle()` |
 | Service 方法 | 业务语义 | `publishArticle()`, `auditComment()` |
 
-### 3. 统一返回格式
+### 4. 统一返回格式
 
 **成功响应**：
 ```java
@@ -192,7 +598,7 @@ Page<Article> page = articleService.page(pageParam);
 return Result.success(PageResult.of(page));
 ```
 
-### 4. 异常处理规范
+### 5. 异常处理规范
 
 **业务异常**：
 ```java
@@ -207,7 +613,7 @@ if (article == null) {
 - ❌ 不要在 Controller 中使用 try-catch
 - ✅ 让异常自然向上抛出
 
-### 5. 数据库操作规范
+### 6. 数据库操作规范
 
 **推荐使用 Lambda 查询**：
 ```java
@@ -233,7 +639,7 @@ Page<Article> page = new Page<>(pageNum, pageSize);
 Page<Article> result = articleMapper.selectPage(page, wrapper);
 ```
 
-### 6. 安全规范
+### 7. 安全规范
 
 **接口权限分类**：
 
@@ -262,7 +668,7 @@ String encodedPassword = passwordEncoder.encode(rawPassword);
 passwordEncoder.matches(rawPassword, encodedPassword);
 ```
 
-### 7. AI 集成规范
+### 8. AI 集成规范
 
 **异步审核**：
 ```java
@@ -832,6 +1238,11 @@ CREATE TABLE IF NOT EXISTS `new_table` (
 - [ ] SQL 是否有性能问题
 - [ ] 是否有事务处理（涉及多表操作）
 - [ ] 日志是否完善
+- [ ] 所有类是否有类注释（包含 @author 和 @since）
+- [ ] 所有 public 方法是否有完整的 Javadoc 注释
+- [ ] 实体类字段是否都有注释说明
+- [ ] 枚举值是否说明了每个值的含义
+- [ ] 复杂业务逻辑是否有说明注释
 
 **前端检查**：
 - [ ] 是否有 TypeScript 类型定义
