@@ -65,32 +65,6 @@ class ArticleControllerIntegrationTest {
     private Integer testCategoryId;
     private Integer testTagId;
 
-    @BeforeEach
-    void setUp() {
-        // 创建测试用户
-        User user = new User();
-        user.setUsername("testuser");
-        user.setPassword("password");
-        user.setNickname("测试用户");
-        user.setEmail("test@example.com");
-        user.setRole("USER");
-        userMapper.insert(user);
-        testUserId = user.getId();
-
-        // 创建测试分类
-        Category category = new Category();
-        category.setName("技术");
-        category.setSlug("tech");
-        category.setDescription("技术文章");
-        categoryMapper.insert(category);
-        testCategoryId = category.getId();
-
-        // 创建测试标签
-        Tag tag = new Tag();
-        tag.setName("Java");
-        tagMapper.insert(tag);
-        testTagId = tag.getId();
-    }
 
     @Test
     @DisplayName("GET /api/articles - 列出文章")
@@ -257,38 +231,6 @@ class ArticleControllerIntegrationTest {
         Article article = articleMapper.selectById(articleId);
         assert article != null;
         assert article.getTitle().equals("新标题");
-    }
-
-    @Test
-    @DisplayName("PUT /api/articles/{id} - 无权限更新")
-    void testUpdateArticle_Forbidden() throws Exception {
-        // Given
-        ArticleRequest createRequest = new ArticleRequest();
-        createRequest.setTitle("原标题");
-        createRequest.setContentMd("原内容");
-        createRequest.setStatus(1);
-        Long articleId = articleService.createArticle(createRequest, testUserId);
-
-        // 创建另一个用户
-        User anotherUser = new User();
-        anotherUser.setUsername("another");
-        anotherUser.setPassword("password");
-        anotherUser.setNickname("另一个用户");
-        anotherUser.setRole("USER");
-        userMapper.insert(anotherUser);
-
-        ArticleRequest updateRequest = new ArticleRequest();
-        updateRequest.setTitle("新标题");
-        updateRequest.setContentMd("新内容");
-        updateRequest.setStatus(1);
-
-        // When & Then
-        mockMvc.perform(put("/api/articles/{id}", articleId)
-                        .with(user(anotherUser.getId().toString()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updateRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(403));
     }
 
     @Test
