@@ -66,13 +66,15 @@
                 <el-icon><Notification /></el-icon>
                 官方博客
               </el-dropdown-item>
-              <el-dropdown-item divided>
-                <span class="skin-label">博客皮肤</span>
-                <el-radio-group :model-value="theme.theme" size="small" class="skin-radios" @update:model-value="theme.setTheme">
-                  <el-radio-button label="light">亮色</el-radio-button>
-                  <el-radio-button label="dark">暗色</el-radio-button>
-                  <el-radio-button label="blue">蓝色</el-radio-button>
-                </el-radio-group>
+              <el-dropdown-item divided class="skin-dropdown-item">
+                <div class="skin-wrapper">
+                  <span class="skin-label">博客皮肤</span>
+                  <el-radio-group :model-value="theme.theme" size="small" class="skin-radios" @update:model-value="theme.setTheme">
+                    <el-radio-button label="light">亮色</el-radio-button>
+                    <el-radio-button label="dark">暗色</el-radio-button>
+                    <el-radio-button label="blue">蓝色</el-radio-button>
+                  </el-radio-group>
+                </div>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -228,19 +230,45 @@ async function handleLogout() {
   white-space: nowrap;
 }
 
+.skin-dropdown-item {
+  padding: 0 !important;
+}
+
+.skin-wrapper {
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  position: relative;
+  z-index: 1;
+}
+
 .skin-label {
   display: block;
-  padding: 4px 0 8px;
-  font-size: 12px;
-  color: var(--text-muted);
+  padding-bottom: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .skin-radios {
-  margin-top: 4px;
+  display: flex;
+  gap: 6px;
+}
+
+.skin-radios :deep(.el-radio-button) {
+  flex: 1;
 }
 
 .skin-radios :deep(.el-radio-button__inner) {
-  padding: 4px 10px;
+  padding: 6px 12px;
+  width: 100%;
+  font-size: 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.skin-radios :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
 }
 
 .header {
