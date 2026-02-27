@@ -6,6 +6,12 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+/**
+ * 注册请求 DTO
+ * 
+ * @author AICogniBlog Team
+ * @since 1.0.0
+ */
 @Data
 public class RegisterRequest {
 
@@ -15,10 +21,13 @@ public class RegisterRequest {
     private String username;
 
     @NotBlank(message = "密码不能为空")
-    @Size(min = 6, max = 30, message = "密码长度为6-30位")
+    @Size(max = 1000, message = "密码加密数据过长")
     private String password;
 
     @NotBlank(message = "邮箱不能为空")
     @Email(message = "邮箱格式不正确")
     private String email;
+    
+    /** 昵称（可选） */
+    private String nickname;
 }
