@@ -1,11 +1,11 @@
--- AICogniBlog 数据库初始化脚本（已废弃）
--- 警告：此文件已不再维护，仅供参考
--- 请使用以下文件：
---   - schema-full.sql：全量初始化（首次部署、开发环境）
---   - schema-incremental.sql：增量更新（生产环境、已有数据）
--- 执行前请先创建数据库: CREATE DATABASE aicogniblog DEFAULT CHARACTER SET utf8mb4;
+-- AICogniBlog 数据库增量更新脚本
+-- 用途：在已有数据的数据库上执行表结构变更
+-- 说明：每次表结构变更时，在此文件末尾追加新的变更语句
+-- 格式：-- [日期] [变更说明]
 
-USE aicogniblog;
+-- ============================================================
+-- 初始版本 (2026-02-27)
+-- ============================================================
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS `user` (
@@ -134,12 +134,12 @@ CREATE TABLE IF NOT EXISTS `follow` (
     KEY `idx_following` (`following_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户关注';
 
--- 初始化管理员账号（密码: Admin@123，已用BCrypt加密）
-INSERT INTO `user` (`username`, `password_hash`, `email`, `nickname`, `role`, `status`)
-VALUES ('admin', '$2b$10$9R7x/6i8ngiHftgNpg0x6u7sXGOVaYnEj87lhQ4Ng61yZ3.ffchna', 'admin@aicogniblog.com', '管理员', 1, 1);
+-- ============================================================
+-- 后续变更请在此处追加
+-- ============================================================
 
--- 初始化测试分类
-INSERT INTO `category` (`name`, `slug`) VALUES ('后端开发', 'backend'), ('前端开发', 'frontend'), ('随笔', 'essay'), ('官方公告', 'official');
+-- 示例格式：
+-- -- [2026-03-01] 为用户表添加手机号字段
+-- ALTER TABLE `user` ADD COLUMN `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号' AFTER `email`;
+-- ALTER TABLE `user` ADD UNIQUE KEY `uk_phone` (`phone`);
 
--- 初始化测试标签
-INSERT INTO `tag` (`name`) VALUES ('Java'), ('Spring Boot'), ('Vue'), ('MySQL'), ('学习笔记');

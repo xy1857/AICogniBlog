@@ -1,4 +1,8 @@
--- AICogniBlog 数据库初始化脚本
+-- AICogniBlog 数据库初始化脚本（已废弃）
+-- 警告：此文件已不再维护，仅供参考
+-- 请使用以下文件：
+--   - schema-full.sql：全量初始化（首次部署、开发环境）
+--   - schema-incremental.sql：增量更新（生产环境、已有数据）
 -- 执行前请先创建数据库: CREATE DATABASE aicogniblog DEFAULT CHARACTER SET utf8mb4;
 
 USE aicogniblog;

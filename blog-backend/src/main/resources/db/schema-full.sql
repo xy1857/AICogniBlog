@@ -1,14 +1,24 @@
--- AICogniBlog 数据库初始化脚本（已废弃）
--- 警告：此文件已不再维护，仅供参考
--- 请使用以下文件：
---   - schema-full.sql：全量初始化（首次部署、开发环境）
---   - schema-incremental.sql：增量更新（生产环境、已有数据）
+-- AICogniBlog 数据库全量初始化脚本
+-- 用途：首次部署或完全重建数据库时使用
+-- 警告：此脚本会删除所有现有数据！
 -- 执行前请先创建数据库: CREATE DATABASE aicogniblog DEFAULT CHARACTER SET utf8mb4;
 
 USE aicogniblog;
 
+-- 删除已存在的表（按依赖关系倒序删除）
+DROP TABLE IF EXISTS `follow`;
+DROP TABLE IF EXISTS `subscription`;
+DROP TABLE IF EXISTS `browse_history`;
+DROP TABLE IF EXISTS `article_like`;
+DROP TABLE IF EXISTS `comment`;
+DROP TABLE IF EXISTS `article_tag`;
+DROP TABLE IF EXISTS `article`;
+DROP TABLE IF EXISTS `tag`;
+DROP TABLE IF EXISTS `category`;
+DROP TABLE IF EXISTS `user`;
+
 -- 用户表
-CREATE TABLE IF NOT EXISTS `user` (
+CREATE TABLE `user` (
     `id`            BIGINT          NOT NULL AUTO_INCREMENT COMMENT '用户ID',
     `username`      VARCHAR(50)     NOT NULL COMMENT '用户名（登录账号）',
     `password_hash` VARCHAR(255)    NOT NULL COMMENT '密码哈希（BCrypt）',
@@ -28,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 分类表
-CREATE TABLE IF NOT EXISTS `category` (
+CREATE TABLE `category` (
     `id`         INT          NOT NULL AUTO_INCREMENT COMMENT '分类ID',
     `name`       VARCHAR(50)  NOT NULL COMMENT '分类名称',
     `slug`       VARCHAR(50)  NOT NULL COMMENT '分类别名（URL友好）',
@@ -40,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `category` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章分类表';
 
 -- 标签表
-CREATE TABLE IF NOT EXISTS `tag` (
+CREATE TABLE `tag` (
     `id`         INT         NOT NULL AUTO_INCREMENT COMMENT '标签ID',
     `name`       VARCHAR(30) NOT NULL COMMENT '标签名称',
     `deleted`    TINYINT     NOT NULL DEFAULT 0,
@@ -50,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `tag` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='标签表';
 
 -- 文章表
-CREATE TABLE IF NOT EXISTS `article` (
+CREATE TABLE `article` (
     `id`           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '文章ID',
     `author_id`    BIGINT       NOT NULL COMMENT '作者ID',
     `category_id`  INT          DEFAULT NULL COMMENT '分类ID',
@@ -70,14 +80,14 @@ CREATE TABLE IF NOT EXISTS `article` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章表';
 
 -- 文章-标签关联表
-CREATE TABLE IF NOT EXISTS `article_tag` (
+CREATE TABLE `article_tag` (
     `article_id` BIGINT NOT NULL COMMENT '文章ID',
     `tag_id`     INT    NOT NULL COMMENT '标签ID',
     PRIMARY KEY (`article_id`, `tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章标签关联表';
 
 -- 评论表
-CREATE TABLE IF NOT EXISTS `comment` (
+CREATE TABLE `comment` (
     `id`                  BIGINT   NOT NULL AUTO_INCREMENT COMMENT '评论ID',
     `article_id`          BIGINT   NOT NULL COMMENT '文章ID',
     `user_id`             BIGINT   NOT NULL COMMENT '评论者ID',
@@ -95,7 +105,7 @@ CREATE TABLE IF NOT EXISTS `comment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='评论表';
 
 -- 文章点赞表
-CREATE TABLE IF NOT EXISTS `article_like` (
+CREATE TABLE `article_like` (
     `user_id`     BIGINT   NOT NULL COMMENT '用户ID',
     `article_id`  BIGINT   NOT NULL COMMENT '文章ID',
     `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
@@ -104,7 +114,7 @@ CREATE TABLE IF NOT EXISTS `article_like` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章点赞表';
 
 -- 浏览足迹表（每用户每文章一条，按最近浏览时间更新）
-CREATE TABLE IF NOT EXISTS `browse_history` (
+CREATE TABLE `browse_history` (
     `user_id`    BIGINT   NOT NULL COMMENT '用户ID',
     `article_id` BIGINT   NOT NULL COMMENT '文章ID',
     `viewed_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '浏览时间',
@@ -113,7 +123,7 @@ CREATE TABLE IF NOT EXISTS `browse_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户浏览足迹';
 
 -- 订阅表（分类/标签）
-CREATE TABLE IF NOT EXISTS `subscription` (
+CREATE TABLE `subscription` (
     `id`         BIGINT   NOT NULL AUTO_INCREMENT COMMENT '主键',
     `user_id`    BIGINT   NOT NULL COMMENT '用户ID',
     `target_type` VARCHAR(20) NOT NULL COMMENT '类型: category / tag',
@@ -125,7 +135,7 @@ CREATE TABLE IF NOT EXISTS `subscription` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户订阅';
 
 -- 关注表
-CREATE TABLE IF NOT EXISTS `follow` (
+CREATE TABLE `follow` (
     `follower_id`  BIGINT   NOT NULL COMMENT '关注者ID',
     `following_id` BIGINT   NOT NULL COMMENT '被关注者ID',
     `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -143,3 +153,4 @@ INSERT INTO `category` (`name`, `slug`) VALUES ('后端开发', 'backend'), ('�
 
 -- 初始化测试标签
 INSERT INTO `tag` (`name`) VALUES ('Java'), ('Spring Boot'), ('Vue'), ('MySQL'), ('学习笔记');
+

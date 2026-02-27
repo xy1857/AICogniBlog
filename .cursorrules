@@ -758,12 +758,70 @@ onMounted(async () => {
 
 ### 数据库变更流程
 
-1. 修改 `db/init.sql` 文件
-2. 更新对应的 Entity 类
-3. 如果是新表，创建对应的 Mapper 接口
-4. 重启后端服务（开发环境会自动重建表）
+**重要：数据库脚本分为全量和增量两种**
 
-**注意**：生产环境使用数据库迁移工具（如 Flyway）
+#### SQL 文件说明
+
+| 文件 | 用途 | 使用场景 |
+|------|------|---------|
+| `db/schema-full.sql` | 全量初始化脚本 | 首次部署、开发环境重建、测试环境初始化 |
+| `db/schema-incremental.sql` | 增量更新脚本 | 生产环境表结构变更、已有数据的数据库升级 |
+| `db/init.sql` | 旧版脚本（已废弃） | 仅供参考，不再使用 |
+
+#### 表结构变更步骤
+
+**开发环境（无数据或可重建）**：
+1. 修改 `db/schema-full.sql` 文件
+2. 同步修改 `db/schema-incremental.sql` 文件（在末尾追加变更语句）
+3. 同步更新 `src/test/resources/schema.sql`（测试环境）
+4. 更新对应的 Entity 类
+5. 如果是新表，创建对应的 Mapper 接口
+6. 重启后端服务验证
+
+**生产环境（有数据不能删除）**：
+1. 只执行 `db/schema-incremental.sql` 中的新增变更语句
+2. 备份数据库后执行
+3. 验证数据完整性
+
+#### 增量脚本编写规范
+
+```sql
+-- ============================================================
+-- [日期] [变更说明]
+-- ============================================================
+
+-- 示例1：添加字段
+ALTER TABLE `user` ADD COLUMN `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号' AFTER `email`;
+ALTER TABLE `user` ADD UNIQUE KEY `uk_phone` (`phone`);
+
+-- 示例2：修改字段
+ALTER TABLE `article` MODIFY COLUMN `title` VARCHAR(300) NOT NULL COMMENT '文章标题';
+
+-- 示例3：添加索引
+ALTER TABLE `comment` ADD INDEX `idx_created_at` (`created_at`);
+
+-- 示例4：新增表
+CREATE TABLE IF NOT EXISTS `new_table` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='新表';
+```
+
+#### 变更检查清单
+
+- [ ] 全量脚本 `schema-full.sql` 已更新
+- [ ] 增量脚本 `schema-incremental.sql` 已追加变更
+- [ ] 测试脚本 `test/resources/schema.sql` 已同步
+- [ ] Entity 类已更新
+- [ ] Mapper 接口已创建（如果是新表）
+- [ ] 本地测试通过
+- [ ] 增量脚本在已有数据的数据库上测试通过
+
+**注意**：
+- ✅ 增量脚本使用 `CREATE TABLE IF NOT EXISTS`、`ALTER TABLE` 等安全语句
+- ✅ 增量脚本可重复执行不报错
+- ❌ 增量脚本不能包含 `DROP TABLE`、`TRUNCATE` 等危险操作
+- ❌ 不要删除增量脚本中的历史变更记录
 
 ### 代码审查检查清单
 
