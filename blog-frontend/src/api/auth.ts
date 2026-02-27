@@ -27,4 +27,7 @@ export const authApi = {
     http.post('/auth/register', data),
 
   logout: () => http.post('/auth/logout'),
+
+  getPublicKey: () =>
+    http.get<any, { data: { publicKey: string } }>('/auth/public-key'),
 }

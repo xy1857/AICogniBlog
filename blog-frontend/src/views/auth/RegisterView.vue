@@ -35,6 +35,7 @@ import type { FormInstance } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { authApi } from '@/api/auth'
 import { ElMessage } from 'element-plus'
+import { encryptPasswordAuto } from '@/utils/crypto'
 
 const router = useRouter()
 const formRef = ref<FormInstance>()
@@ -61,9 +62,17 @@ async function handleRegister() {
   await formRef.value?.validate()
   loading.value = true
   try {
-    await authApi.register(form)
+    // 加密密码
+    const encryptedPassword = await encryptPasswordAuto(form.password)
+    await authApi.register({
+      username: form.username,
+      email: form.email,
+      password: encryptedPassword
+    })
     ElMessage.success('注册成功，请登录')
     router.push('/login')
+  } catch (error: any) {
+    ElMessage.error(error.message || '注册失败')
   } finally {
     loading.value = false
   }

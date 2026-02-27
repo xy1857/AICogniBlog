@@ -9,11 +9,13 @@ import com.aicogniblog.comment.service.CommentService;
 import com.aicogniblog.common.exception.BizException;
 import com.aicogniblog.common.result.PageResult;
 import com.aicogniblog.common.result.Result;
+import com.aicogniblog.common.util.RsaUtil;
 import com.aicogniblog.user.dto.UpdatePasswordRequest;
 import com.aicogniblog.user.dto.UpdateProfileRequest;
 import com.aicogniblog.user.dto.UserVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +29,9 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final CommentService commentService;
     private final ArticleService articleService;
+
+    @Value("${rsa.private-key}")
+    private String privateKey;
 
     @GetMapping("/profile")
     public Result<UserVO> getProfile(Authentication auth) {
@@ -52,10 +57,21 @@ public class UserController {
                                        Authentication auth) {
         Long userId = (Long) auth.getPrincipal();
         User user = userMapper.selectById(userId);
-        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+        
+        // 解密旧密码和新密码
+        String decryptedOldPassword;
+        String decryptedNewPassword;
+        try {
+            decryptedOldPassword = RsaUtil.decrypt(request.getOldPassword(), privateKey);
+            decryptedNewPassword = RsaUtil.decrypt(request.getNewPassword(), privateKey);
+        } catch (Exception e) {
+            throw new BizException("密码解密失败");
+        }
+        
+        if (!passwordEncoder.matches(decryptedOldPassword, user.getPasswordHash())) {
             throw new BizException("旧密码不正确");
         }
-        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordHash(passwordEncoder.encode(decryptedNewPassword));
         userMapper.updateById(user);
         return Result.success("密码修改成功");
     }

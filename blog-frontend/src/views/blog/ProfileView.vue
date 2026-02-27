@@ -66,6 +66,7 @@ import type { FormInstance, UploadFile } from 'element-plus'
 import { userApi } from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
+import { encryptPasswordAuto } from '@/utils/crypto'
 
 const auth = useAuthStore()
 const activeTab = ref('info')
@@ -115,9 +116,18 @@ async function changePassword() {
   await pwdFormRef.value?.validate()
   changingPwd.value = true
   try {
-    await userApi.updatePassword(pwdForm)
+    // 加密密码
+    const encryptedOldPassword = await encryptPasswordAuto(pwdForm.oldPassword)
+    const encryptedNewPassword = await encryptPasswordAuto(pwdForm.newPassword)
+    
+    await userApi.updatePassword({
+      oldPassword: encryptedOldPassword,
+      newPassword: encryptedNewPassword
+    })
     ElMessage.success('密码修改成功，请重新登录')
     auth.clearUser()
+  } catch (error: any) {
+    ElMessage.error(error.message || '密码修改失败')
   } finally {
     changingPwd.value = false
   }

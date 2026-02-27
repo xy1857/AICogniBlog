@@ -8,8 +8,10 @@ import com.aicogniblog.auth.mapper.UserMapper;
 import com.aicogniblog.auth.security.JwtUtil;
 import com.aicogniblog.auth.service.AuthService;
 import com.aicogniblog.common.exception.BizException;
+import com.aicogniblog.common.util.RsaUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,9 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+
+    @Value("${rsa.private-key}")
+    private String privateKey;
 
     @Override
     public void register(RegisterRequest request) {
@@ -39,9 +44,17 @@ public class AuthServiceImpl implements AuthService {
             throw new BizException("邮箱已被注册");
         }
 
+        // 解密密码
+        String decryptedPassword;
+        try {
+            decryptedPassword = RsaUtil.decrypt(request.getPassword(), privateKey);
+        } catch (Exception e) {
+            throw new BizException("密码解密失败");
+        }
+
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setPasswordHash(passwordEncoder.encode(decryptedPassword));
         user.setEmail(request.getEmail());
         user.setNickname(request.getUsername());
         user.setRole(0);
@@ -56,7 +69,19 @@ public class AuthServiceImpl implements AuthService {
         User user = userMapper.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, request.getUsername()));
 
-        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        if (user == null) {
+            throw new BizException(401, "用户名或密码错误");
+        }
+
+        // 解密密码
+        String decryptedPassword;
+        try {
+            decryptedPassword = RsaUtil.decrypt(request.getPassword(), privateKey);
+        } catch (Exception e) {
+            throw new BizException("密码解密失败");
+        }
+
+        if (!passwordEncoder.matches(decryptedPassword, user.getPasswordHash())) {
             throw new BizException(401, "用户名或密码错误");
         }
 

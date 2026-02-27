@@ -33,6 +33,7 @@ import { useRouter } from 'vue-router'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
+import { encryptPasswordAuto } from '@/utils/crypto'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -49,10 +50,17 @@ async function handleLogin() {
   await formRef.value?.validate()
   loading.value = true
   try {
-    const res = await authApi.login(form) as any
+    // 加密密码
+    const encryptedPassword = await encryptPasswordAuto(form.password)
+    const res = await authApi.login({
+      username: form.username,
+      password: encryptedPassword
+    }) as any
     auth.setUser(res.data)
     ElMessage.success('登录成功')
     router.push(auth.isAdmin ? '/admin' : '/')
+  } catch (error: any) {
+    ElMessage.error(error.message || '登录失败')
   } finally {
     loading.value = false
   }
