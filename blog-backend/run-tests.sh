@@ -47,3 +47,6 @@ echo "================================"
 echo ""
 echo "测试报告位置: target/surefire-reports/"
 
+
+
+

@@ -16,6 +16,7 @@
     "@bytemd/vue-next": "^1.22.0",
     "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.13.5",
+    "crypto-js": "^4.2.0",
     "element-plus": "^2.13.2",
     "jsencrypt": "^3.5.4",
     "pinia": "^3.0.4",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.2",
     "@vue/tsconfig": "^0.8.1",

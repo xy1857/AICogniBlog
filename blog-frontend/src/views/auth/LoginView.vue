@@ -27,15 +27,16 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import type { FormInstance } from 'element-plus'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 import { encryptPasswordAuto } from '@/utils/crypto'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -45,6 +46,14 @@ const rules = {
   username: [{ required: true, message: '请输入用户名' }],
   password: [{ required: true, message: '请输入密码' }],
 }
+
+// 从 URL 参数中获取用户名（用于账号切换后重新登录）
+onMounted(() => {
+  const username = route.query.username as string
+  if (username) {
+    form.username = username
+  }
+})
 
 async function handleLogin() {
   await formRef.value?.validate()
@@ -56,7 +65,10 @@ async function handleLogin() {
       username: form.username,
       password: encryptedPassword
     }) as any
-    auth.setUser(res.data)
+    
+    // 登录成功，保存到账号列表（默认开启）
+    auth.setUser(res.data, true)
+    
     ElMessage.success('登录成功')
     router.push(auth.isAdmin ? '/admin' : '/')
   } catch (error: any) {

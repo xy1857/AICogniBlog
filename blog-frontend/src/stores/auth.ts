@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { LoginResponse } from '@/api/auth'
+import { useAccountManagerStore, type AccountInfo } from './accountManager'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || '')
@@ -12,7 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => role.value === 1)
 
-  function setUser(data: LoginResponse) {
+  function setUser(data: LoginResponse, saveToAccountList = true) {
     token.value = data.token
     userId.value = data.userId
     username.value = data.username
@@ -24,6 +25,19 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('username', data.username)
     localStorage.setItem('nickname', data.nickname)
     localStorage.setItem('role', String(data.role))
+
+    // 保存到账号管理器
+    if (saveToAccountList) {
+      const accountManager = useAccountManagerStore()
+      accountManager.addOrUpdateAccount({
+        userId: data.userId,
+        username: data.username,
+        nickname: data.nickname,
+        token: data.token,
+        role: data.role,
+        lastUsedAt: Date.now()
+      })
+    }
   }
 
   function clearUser() {
@@ -39,5 +53,35 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('role')
   }
 
-  return { token, userId, username, nickname, role, isLoggedIn, isAdmin, setUser, clearUser }
+  /**
+   * 从账号信息恢复登录状态
+   * 
+   * @param account 账号信息
+   */
+  function restoreFromAccount(account: AccountInfo) {
+    token.value = account.token
+    userId.value = account.userId
+    username.value = account.username
+    nickname.value = account.nickname
+    role.value = account.role
+
+    localStorage.setItem('token', account.token)
+    localStorage.setItem('userId', String(account.userId))
+    localStorage.setItem('username', account.username)
+    localStorage.setItem('nickname', account.nickname)
+    localStorage.setItem('role', String(account.role))
+  }
+
+  return { 
+    token, 
+    userId, 
+    username, 
+    nickname, 
+    role, 
+    isLoggedIn, 
+    isAdmin, 
+    setUser, 
+    clearUser,
+    restoreFromAccount 
+  }
 })

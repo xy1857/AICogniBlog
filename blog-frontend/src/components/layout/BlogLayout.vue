@@ -108,11 +108,31 @@
                 </span>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item @click="$router.push('/profile')">个人中心</el-dropdown-item>
-                    <el-dropdown-item @click="$router.push('/articles/create')">写文章</el-dropdown-item>
-                    <el-dropdown-item @click="$router.push('/drafts')">我的草稿</el-dropdown-item>
-                    <el-dropdown-item v-if="auth.isAdmin" @click="$router.push('/admin')">管理后台</el-dropdown-item>
-                    <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+                    <el-dropdown-item @click="$router.push('/profile')">
+                      <el-icon><User /></el-icon>
+                      个人中心
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="$router.push('/articles/create')">
+                      <el-icon><EditPen /></el-icon>
+                      写文章
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="$router.push('/drafts')">
+                      <el-icon><Document /></el-icon>
+                      我的草稿
+                    </el-dropdown-item>
+                    <el-dropdown-item v-if="auth.isAdmin" @click="$router.push('/admin')">
+                      <el-icon><Setting /></el-icon>
+                      管理后台
+                    </el-dropdown-item>
+                    <el-dropdown-item divided @click="showAccountSwitcher = true">
+                      <el-icon><Switch /></el-icon>
+                      切换账号
+                      <el-badge v-if="accountManager.accountCount > 1" :value="accountManager.accountCount" class="account-badge" />
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="handleLogout">
+                      <el-icon><SwitchButton /></el-icon>
+                      退出登录
+                    </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -143,18 +163,27 @@
       </div>
     </footer>
     </el-container>
+
+    <!-- 账号切换弹窗 -->
+    <AccountSwitcher v-model="showAccountSwitcher" />
   </el-container>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
+import { useAccountManagerStore } from '@/stores/accountManager'
 import { useRouter } from 'vue-router'
 import { authApi } from '@/api/auth'
+import AccountSwitcher from '@/components/account/AccountSwitcher.vue'
 
 const auth = useAuthStore()
 const theme = useThemeStore()
+const accountManager = useAccountManagerStore()
 const router = useRouter()
+
+const showAccountSwitcher = ref(false)
 
 async function handleLogout() {
   await authApi.logout().catch(() => {})
@@ -465,5 +494,13 @@ async function handleLogout() {
 .footer-divider {
   margin: 0 10px;
   opacity: 0.6;
+}
+
+.account-badge {
+  margin-left: 8px;
+}
+
+.account-badge :deep(.el-badge__content) {
+  background: var(--primary);
 }
 </style>
