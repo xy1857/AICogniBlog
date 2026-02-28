@@ -25,6 +25,10 @@ const router = createRouter({
         { path: 'official', name: 'Official', component: () => import('@/views/blog/OfficialView.vue') },
       ],
     },
+    // 页面装修
+    { path: '/page-builder', name: 'PageBuilder', component: () => import('@/views/PageBuilder.vue'), meta: { requireAuth: true } },
+    { path: '/page-preview/:username?', name: 'PagePreview', component: () => import('@/views/PagePreview.vue') },
+    { path: '/home/:username', name: 'UserHome', component: () => import('@/views/PagePreview.vue') },
     // 认证
     { path: '/login', name: 'Login', component: () => import('@/views/auth/LoginView.vue') },
     { path: '/register', name: 'Register', component: () => import('@/views/auth/RegisterView.vue') },

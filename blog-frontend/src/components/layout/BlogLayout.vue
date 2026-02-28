@@ -120,6 +120,14 @@
                       <el-icon><Document /></el-icon>
                       我的草稿
                     </el-dropdown-item>
+                    <el-dropdown-item @click="$router.push('/page-builder')">
+                      <el-icon><Grid /></el-icon>
+                      页面装修
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="$router.push(`/home/${auth.username}`)">
+                      <el-icon><House /></el-icon>
+                      我的主页
+                    </el-dropdown-item>
                     <el-dropdown-item v-if="auth.isAdmin" @click="$router.push('/admin')">
                       <el-icon><Setting /></el-icon>
                       管理后台
@@ -171,6 +179,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Grid, House } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { useAccountManagerStore } from '@/stores/accountManager'

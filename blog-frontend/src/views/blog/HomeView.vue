@@ -1,5 +1,40 @@
 <template>
-  <div class="home">
+  <!-- 如果用户有装修页面，显示装修页面 -->
+  <div v-if="hasCustomPage && showCustomPage" class="custom-home">
+    <div class="custom-home-header">
+      <el-button text @click="showCustomPage = false">
+        <el-icon><Back /></el-icon>
+        返回默认主页
+      </el-button>
+      <el-button text @click="$router.push('/page-builder')">
+        <el-icon><Edit /></el-icon>
+        编辑装修
+      </el-button>
+    </div>
+    <PagePreview :username="auth.username" />
+  </div>
+
+  <!-- 默认主页 -->
+  <div v-else class="home">
+    <!-- 如果用户有装修页面，显示切换按钮 -->
+    <div v-if="hasCustomPage && auth.isLoggedIn" class="custom-page-banner">
+      <el-alert
+        title="你已装修了个人主页"
+        type="success"
+        :closable="false"
+        show-icon
+      >
+        <template #default>
+          <div class="banner-content">
+            <span>查看你的装修页面，展示个性化内容</span>
+            <el-button type="primary" size="small" @click="showCustomPage = true">
+              查看装修主页
+            </el-button>
+          </div>
+        </template>
+      </el-alert>
+    </div>
+
     <el-row :gutter="24">
       <!-- 文章列表 -->
       <el-col :span="17">
@@ -123,9 +158,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { Back, Edit } from '@element-plus/icons-vue'
 import { articleApi } from '@/api/article'
 import { commentApi } from '@/api/comment'
+import { useAuthStore } from '@/stores/auth'
+import PagePreview from '@/views/PagePreview.vue'
 
+const auth = useAuthStore()
 const articles = ref<any[]>([])
 const categories = ref<any[]>([])
 const tags = ref<any[]>([])
@@ -137,6 +176,36 @@ const loading = ref(false)
 const keyword = ref('')
 const selectedCategory = ref<number | null>(null)
 const selectedTag = ref<number | null>(null)
+const hasCustomPage = ref(false)
+const showCustomPage = ref(false)
+
+// 检查用户是否有装修页面
+function checkCustomPage() {
+  if (!auth.isLoggedIn || !auth.username) {
+    hasCustomPage.value = false
+    return
+  }
+  
+  // 检查 localStorage 中是否有用户的装修配置
+  const userConfig = localStorage.getItem(`pageConfig_${auth.username}`)
+  if (userConfig) {
+    try {
+      const config = JSON.parse(userConfig)
+      // 如果有组件，说明用户装修过
+      hasCustomPage.value = config.components && config.components.length > 0
+      
+      // 如果用户设置了自动显示装修页面，则自动切换
+      const autoShow = localStorage.getItem(`autoShowCustomPage_${auth.username}`)
+      if (autoShow === 'true' && hasCustomPage.value) {
+        showCustomPage.value = true
+      }
+    } catch (e) {
+      hasCustomPage.value = false
+    }
+  } else {
+    hasCustomPage.value = false
+  }
+}
 
 async function fetchArticles() {
   loading.value = true
@@ -179,6 +248,14 @@ function formatDate(date: string) {
 }
 
 onMounted(async () => {
+  // 先检查是否有装修页面
+  checkCustomPage()
+  
+  // 如果显示装修页面，不需要加载默认主页数据
+  if (showCustomPage.value) {
+    return
+  }
+  
   fetchArticles()
   const [catRes, tagRes, latestRes] = await Promise.all([
     articleApi.categories(),
@@ -411,4 +488,34 @@ onMounted(async () => {
 .loading-wrap {
   padding: 24px;
 }
+
+/* 装修页面样式 */
+.custom-home {
+  min-height: 80vh;
+}
+
+.custom-home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.custom-page-banner {
+  margin-bottom: 24px;
+}
+
+.banner-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.banner-content span {
+  flex: 1;
+}
+
 </style>

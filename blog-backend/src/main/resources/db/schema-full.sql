@@ -6,6 +6,8 @@
 USE aicogniblog;
 
 -- 删除已存在的表（按依赖关系倒序删除）
+DROP TABLE IF EXISTS `guestbook`;
+DROP TABLE IF EXISTS `page_config`;
 DROP TABLE IF EXISTS `follow`;
 DROP TABLE IF EXISTS `subscription`;
 DROP TABLE IF EXISTS `browse_history`;
@@ -143,6 +145,43 @@ CREATE TABLE `follow` (
     KEY `idx_follower` (`follower_id`),
     KEY `idx_following` (`following_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户关注';
+
+-- 留言板表
+CREATE TABLE `guestbook` (
+    `id`         BIGINT       NOT NULL AUTO_INCREMENT COMMENT '留言ID',
+    `user_id`    BIGINT       DEFAULT NULL COMMENT '用户ID（登录用户）',
+    `name`       VARCHAR(50)  NOT NULL COMMENT '留言者昵称',
+    `email`      VARCHAR(100) DEFAULT NULL COMMENT '留言者邮箱',
+    `content`    TEXT         NOT NULL COMMENT '留言内容',
+    `avatar_url` VARCHAR(500) DEFAULT NULL COMMENT '头像URL',
+    `ip_address` VARCHAR(50)  DEFAULT NULL COMMENT 'IP地址',
+    `status`     TINYINT      NOT NULL DEFAULT 1 COMMENT '状态: 0=待审核 1=已发布 2=已拒绝',
+    `deleted`    TINYINT      NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0=正常 1=已删除',
+    `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='留言板';
+
+-- 页面配置表
+CREATE TABLE `page_config` (
+    `id`           BIGINT      NOT NULL AUTO_INCREMENT COMMENT '配置ID',
+    `user_id`      BIGINT      NOT NULL COMMENT '用户ID',
+    `name`         VARCHAR(100) NOT NULL COMMENT '页面名称',
+    `config_json`  LONGTEXT    NOT NULL COMMENT '配置JSON（包含组件、主题等）',
+    `status`       TINYINT     NOT NULL DEFAULT 0 COMMENT '状态: 0=草稿 1=已发布',
+    `is_default`   TINYINT     NOT NULL DEFAULT 0 COMMENT '是否为默认主页: 0=否 1=是',
+    `published_at` DATETIME    DEFAULT NULL COMMENT '发布时间',
+    `deleted`      TINYINT     NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0=正常 1=已删除',
+    `created_at`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_user_default` (`user_id`, `is_default`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='页面配置表';
 
 -- 初始化管理员账号（密码: Admin@123，已用BCrypt加密）
 INSERT INTO `user` (`username`, `password_hash`, `email`, `nickname`, `role`, `status`)

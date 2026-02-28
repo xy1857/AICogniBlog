@@ -11,6 +11,9 @@ export interface ArticleRequest {
 }
 
 export const articleApi = {
+  getArticles: (params: { page?: number; size?: number; categoryId?: number; categorySlug?: string; tagId?: number; keyword?: string; status?: number }) =>
+    http.get('/articles', { params }),
+
   list: (params: { page?: number; size?: number; categoryId?: number; categorySlug?: string; tagId?: number; keyword?: string }) =>
     http.get('/articles', { params }),
 
