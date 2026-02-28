@@ -33,7 +33,13 @@ public class GuestbookService {
                 .map(this::toVO)
                 .collect(Collectors.toList());
         
-        return PageResult.of(voList, total, page, size);
+        // 修改：手动创建 PageResult 对象而不是使用 of 方法
+        PageResult<GuestbookVO> result = new PageResult<>();
+        result.setRecords(voList);
+        result.setTotal(total);
+        result.setCurrent(page);
+        result.setPages((total + size - 1) / size); // 计算总页数
+        return result;
     }
     
     /**
